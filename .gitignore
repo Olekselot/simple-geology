@@ -9,7 +9,6 @@
 *.user
 *.userosscache
 *.sln.docstates
-*.env
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -416,3 +415,33 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ============================================================
+# Project-specific additions
+# ============================================================
+
+# JetBrains Rider IDE files
+.idea/
+*.sln.iml
+
+# ASP.NET Core User Secrets (stored outside repo, but just in case)
+secrets.json
+
+# Environment variable files with sensitive data
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# ASP.NET Core sensitive config overrides
+appsettings.Local.json
+appsettings.Production.json
+
+# React / Vite build output (Client-React)
+Client-React/dist/
+Client-React/dist-ssr/
+Client-React/node_modules/
+
+# EF Core design-time temp files
+efpt.config.json
+efpt.*.config.json

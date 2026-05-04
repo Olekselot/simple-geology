@@ -47,9 +47,6 @@ builder.Services.AddCors(options =>
 	});
 });
 
-builder.Services.AddScoped<BLL_net.Abstractions.IGeologicalObjectRepository, DAL_net.Repositories.InMemoryGeologicalObjectRepository>();
-builder.Services.AddScoped<BLL_net.Services.IGeologicalObjectService, BLL_net.Services.GeologicalObjectService>();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
