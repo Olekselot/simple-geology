@@ -416,9 +416,6 @@ FodyWeavers.xsd
 *.msm
 *.msp
 
-# ============================================================
-# Project-specific additions
-# ============================================================
 
 # JetBrains Rider IDE files
 .idea/
