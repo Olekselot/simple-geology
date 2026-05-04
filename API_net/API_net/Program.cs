@@ -1,3 +1,6 @@
+using DAL_net.Persistence;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Validate required secrets are present before starting
@@ -22,6 +25,8 @@ if (string.IsNullOrWhiteSpace(jwtSecret))
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddDbContext<GeologyDbContext>(options =>
+    options.UseNpgsql(connectionString));
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy("ClientReact", policy =>

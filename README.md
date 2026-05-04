@@ -5,7 +5,7 @@
 - `Client-React` - UI на React + Vite
 - `API_net` - Web API (контролери, DTO, DI)
 - `BLL_net` - бізнес-логіка, моделі, інтерфейси сервісу та репозиторію
-- `DAL_net` - in-memory реалізація репозиторію
+- `DAL_net` - репозиторії + EF Core контекст і міграції PostgreSQL
 - `UnitTests` - xUnit тести для BLL
 
 ## Зв'язки між шарами
@@ -45,6 +45,36 @@ dotnet user-secrets set "AppSecrets:ApiKey" "YOUR_API_KEY"
 
 ```bash
 dotnet user-secrets list
+```
+
+## База даних однією командою (create/update)
+
+Підхід у проєкті: Code-First + EF Core Migrations.
+
+Одна команда для створення або оновлення схеми БД:
+
+```bash
+dotnet ef database update --project DAL_net/DAL_net/DAL_net.csproj --startup-project API_net/API_net/API_net.csproj
+```
+
+Що робить команда:
+
+- якщо БД порожня, створює всі таблиці, індекси та view
+- якщо міграції вже частково застосовані, дотягує тільки нові
+
+## Як змінювати схему далі
+
+1. Оновити EF моделі та конфігурацію в `GeologyDbContext`.
+2. Створити нову міграцію:
+
+```bash
+dotnet ef migrations add <MigrationName> --project DAL_net/DAL_net/DAL_net.csproj --startup-project API_net/API_net/API_net.csproj --output-dir Persistence/Migrations
+```
+
+3. Застосувати її:
+
+```bash
+dotnet ef database update --project DAL_net/DAL_net/DAL_net.csproj --startup-project API_net/API_net/API_net.csproj
 ```
 
 ---
