@@ -1,5 +1,22 @@
 var builder = WebApplication.CreateBuilder(args);
 
+// Validate required secrets are present before starting
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Missing required secret: ConnectionStrings:DefaultConnection. " +
+        "In development, run: dotnet user-secrets set \"ConnectionStrings:DefaultConnection\" \"<your-connection-string>\"");
+}
+
+var jwtSecret = builder.Configuration["AppSecrets:JwtSecretKey"];
+if (string.IsNullOrWhiteSpace(jwtSecret))
+{
+    throw new InvalidOperationException(
+        "Missing required secret: AppSecrets:JwtSecretKey. " +
+        "In development, run: dotnet user-secrets set \"AppSecrets:JwtSecretKey\" \"<your-secret-key>\"");
+}
+
 // Add services to the container.
 
 builder.Services.AddControllers();

@@ -16,9 +16,42 @@
 - UnitTests -> BLL
 - Client-React -> API (`/api/geologicalobjects`)
 
+## Налаштування секретів (User Secrets)
+
+Застосунок використовує [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) для зберігання чутливої інформації поза репозиторієм. Без секретів backend не запуститься.
+
+### 1. Перейдіть до проєкту API
+
+```bash
+cd API_net/API_net
+```
+
+### 2. Встановіть обов'язкові секрети
+
+```bash
+# Рядок підключення до бази даних (PostgreSQL)
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=SimpleGeologyDb;Username=postgres;Password=YOUR_PASSWORD"
+
+# Секрет для підпису JWT-токенів (мінімум 32 символи)
+dotnet user-secrets set "AppSecrets:JwtSecretKey" "YOUR_JWT_SECRET_KEY_MIN_32_CHARS"
+
+# Ключ API (необов'язковий)
+dotnet user-secrets set "AppSecrets:ApiKey" "YOUR_API_KEY"
+```
+
+> Секрети зберігаються локально в `%APPDATA%\Microsoft\UserSecrets\simple-geology-api\secrets.json` і **не потрапляють до git**.
+
+### 3. Перевірте збережені секрети
+
+```bash
+dotnet user-secrets list
+```
+
+---
+
 ## Як запустити
 
-1. Backend:
+1. Backend (після налаштування секретів):
 
 ```bash
 dotnet run --project API_net/API_net/API_net.csproj
