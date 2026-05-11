@@ -19,15 +19,29 @@ public class GeologicalObjectsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<GeologicalObjectDto>>> GetAll(CancellationToken cancellationToken)
     {
-        var items = await _service.GetAllAsync(cancellationToken);
-        return Ok(items.Select(ToDto));
+        try
+        {
+            var items = await _service.GetAllAsync(cancellationToken);
+            return Ok(items.Select(ToDto));
+        }
+        catch (Exception ex)
+        {
+            return Error<IEnumerable<GeologicalObjectDto>>(ex.Message);
+        }
     }
 
     [HttpGet("classes/top-level")]
     public async Task<ActionResult<IEnumerable<string>>> GetTopLevelClasses(CancellationToken cancellationToken)
     {
-        var items = await _service.GetTopLevelClassNamesAsync(cancellationToken);
-        return Ok(items);
+        try
+        {
+            var items = await _service.GetTopLevelClassNamesAsync(cancellationToken);
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            return Error<IEnumerable<string>>(ex.Message);
+        }
     }
 
     [HttpGet("classes/children")]
@@ -40,8 +54,15 @@ public class GeologicalObjectsController : ControllerBase
             return BadRequest(new { error = "topLevelName is required" });
         }
 
-        var items = await _service.GetChildClassNamesAsync(topLevelName, cancellationToken);
-        return Ok(items);
+        try
+        {
+            var items = await _service.GetChildClassNamesAsync(topLevelName, cancellationToken);
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            return Error<IEnumerable<string>>(ex.Message);
+        }
     }
 
     [HttpGet("classes/cildren-level")]
@@ -60,8 +81,15 @@ public class GeologicalObjectsController : ControllerBase
             return BadRequest(new { error = "selectedName is required" });
         }
 
-        var items = await _service.GetChildrenLevelClassNamesAsync(currentLevel, selectedName, cancellationToken);
-        return Ok(items);
+        try
+        {
+            var items = await _service.GetChildrenLevelClassNamesAsync(currentLevel, selectedName, cancellationToken);
+            return Ok(items);
+        }
+        catch (Exception ex)
+        {
+            return Error<IEnumerable<string>>(ex.Message);
+        }
     }
 
     [HttpGet("minerals/characteristics")]
@@ -75,25 +103,39 @@ public class GeologicalObjectsController : ControllerBase
             return BadRequest(new { error = "Provide mineralId or mineralName" });
         }
 
-        var characteristic = await _service.GetMineralCharacteristicAsync(mineralId, mineralName, cancellationToken);
-        if (characteristic is null)
+        try
         {
-            return NotFound(new { error = "Mineral was not found" });
-        }
+            var characteristic = await _service.GetMineralCharacteristicAsync(mineralId, mineralName, cancellationToken);
+            if (characteristic is null)
+            {
+                return NotFound(new { error = "Mineral was not found" });
+            }
 
-        return Ok(ToDto(characteristic));
+            return Ok(ToDto(characteristic));
+        }
+        catch (Exception ex)
+        {
+            return Error<MineralCharacteristicDto>(ex.Message);
+        }
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<GeologicalObjectDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var item = await _service.GetByIdAsync(id, cancellationToken);
-        if (item is null)
+        try
         {
-            return NotFound();
-        }
+            var item = await _service.GetByIdAsync(id, cancellationToken);
+            if (item is null)
+            {
+                return NotFound(new { error = $"Geological object with id {id} was not found" });
+            }
 
-        return Ok(ToDto(item));
+            return Ok(ToDto(item));
+        }
+        catch (Exception ex)
+        {
+            return Error<GeologicalObjectDto>(ex.Message);
+        }
     }
 
     [HttpPost]
@@ -113,6 +155,10 @@ public class GeologicalObjectsController : ControllerBase
         catch (ArgumentException ex)
         {
             return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Error<GeologicalObjectDto>(ex.Message);
         }
     }
 
@@ -141,5 +187,13 @@ public class GeologicalObjectsController : ControllerBase
             item.Paragenesis,
             item.SpecialProperties,
             item.Notes);
+    }
+
+    private static ObjectResult Error<T>(string message)
+    {
+        return new ObjectResult(new { error = message })
+        {
+            StatusCode = StatusCodes.Status500InternalServerError
+        };
     }
 }
