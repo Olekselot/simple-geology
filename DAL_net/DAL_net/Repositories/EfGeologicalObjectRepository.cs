@@ -221,6 +221,45 @@ public class EfGeologicalObjectRepository : IGeologicalObjectRepository
         };
     }
 
+    public async Task<IReadOnlyList<SearchResult>> SearchAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = new NpgsqlConnection(_dbContext.Database.GetConnectionString());
+        await connection.OpenAsync(cancellationToken);
+
+        const string sql = """
+            SELECT name, 'top-level'           AS entity_type FROM top_level_categories WHERE has_items = TRUE AND name ILIKE @pattern
+            UNION ALL
+            SELECT name, 'rock-type'          AS entity_type FROM rock_types          WHERE name ILIKE @pattern
+            UNION ALL
+            SELECT name, 'rock-subtype'        AS entity_type FROM rock_subtypes        WHERE name ILIKE @pattern
+            UNION ALL
+            SELECT name, 'rock'                AS entity_type FROM rocks                WHERE name ILIKE @pattern
+            UNION ALL
+            SELECT name, 'silicate-structure'  AS entity_type FROM silicate_structures  WHERE name ILIKE @pattern
+            UNION ALL
+            SELECT name, 'mineral-class'       AS entity_type FROM mineral_classes      WHERE name ILIKE @pattern
+            UNION ALL
+            SELECT name, 'mineral'             AS entity_type FROM minerals             WHERE name ILIKE @pattern
+            ORDER BY entity_type, name
+            LIMIT 100;
+            """;
+
+        await using var command = new NpgsqlCommand(sql, connection);
+        command.Parameters.AddWithValue("pattern", $"%{query.Trim()}%");
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var results = new List<SearchResult>();
+
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            results.Add(new SearchResult(reader.GetString(0), reader.GetString(1)));
+        }
+
+        return results;
+    }
+
     private static async Task<IReadOnlyList<string>> GetTopLevelChildrenAsync(
         NpgsqlConnection connection,
         string topLevelName,

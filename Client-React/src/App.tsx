@@ -31,6 +31,12 @@ interface MineralCharacteristic {
   notes: string | null;
 }
 
+interface SearchResultDto {
+  name: string;
+  entityType: string;
+  entityTypeLabel: string;
+}
+
 const getErrorText = async (response: Response, fallback: string) => {
   try {
     const payload = await response.json();
@@ -71,11 +77,18 @@ function App() {
   const [currentLevel, setCurrentLevel] = useState<string>("top-level");
   const [selectedMineral, setSelectedMineral] =
     useState<MineralCharacteristic | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<SearchResultDto[] | null>(
+    null,
+  );
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const loadItems = async (level: string, selectedName?: string) => {
     setLoading(true);
     setError(null);
     setSelectedMineral(null);
+    setSearchQuery("");
+    setSearchResults(null);
 
     try {
       let endpoint: string;
@@ -163,6 +176,34 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    if (searchQuery.length < 3) {
+      setSearchResults(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const response = await fetch(
+          `${API_URL}/search?query=${encodeURIComponent(searchQuery)}`,
+        );
+        if (!response.ok) {
+          const message = await getErrorText(response, "Помилка пошуку");
+          throw new Error(message);
+        }
+        const data: SearchResultDto[] = await response.json();
+        setSearchResults(data);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleItemClick = (itemName: string) => {
     const newStep: NavigationStep = {
       level: currentLevel,
@@ -182,6 +223,24 @@ function App() {
     void loadItems(currentLevel, itemName);
   };
 
+  const handleSearchResultClick = (result: SearchResultDto) => {
+    setSearchQuery("");
+    setSearchResults(null);
+
+    if (result.entityType === "mineral") {
+      setNavigationPath([
+        { level: "mineral", name: result.name, label: result.name },
+      ]);
+      void loadMineralCharacteristics(result.name);
+      return;
+    }
+
+    setNavigationPath([
+      { level: result.entityType, name: result.name, label: result.name },
+    ]);
+    void loadItems(result.entityType, result.name);
+  };
+
   const handleBack = () => {
     if (navigationPath.length === 0) return;
 
@@ -191,6 +250,8 @@ function App() {
     if (selectedMineral) {
       setSelectedMineral(null);
       setCurrentLevel("mineral");
+      setSearchQuery("");
+      setSearchResults(null);
       return;
     }
 
@@ -240,6 +301,23 @@ function App() {
 
         <h2>{getLevelLabel(currentLevel)}</h2>
 
+        {!selectedMineral && (
+          <div className="search-box">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Пошук за назвою (від 3 символів)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery.length > 0 && searchQuery.length < 3 && (
+              <span className="search-hint">
+                Введіть ще {3 - searchQuery.length} символ(и)
+              </span>
+            )}
+          </div>
+        )}
+
         {loading && <p className="message loading">Завантаження...</p>}
         {error && <p className="error message">{error}</p>}
 
@@ -247,21 +325,53 @@ function App() {
           <p className="message">Поки що немає даних.</p>
         )}
 
-        {!loading && !error && !selectedMineral && items.length > 0 && (
-          <ul className="category-list">
-            {items.map((item) => (
-              <li key={item} className="category-item">
-                <button
-                  className="category-button"
-                  onClick={() => handleItemClick(item)}
-                >
-                  <span className="category-name">{item}</span>
-                  <span className="category-arrow">→</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+        {searchLoading && <p className="message loading">Пошук...</p>}
+
+        {!searchLoading && searchResults !== null && (
+          <>
+            {searchResults.length === 0 ? (
+              <p className="message">
+                Нічого не знайдено за запитом "{searchQuery}".
+              </p>
+            ) : (
+              <ul className="category-list">
+                {searchResults.map((result, idx) => (
+                  <li key={idx} className="category-item">
+                    <button
+                      className="category-button"
+                      onClick={() => handleSearchResultClick(result)}
+                    >
+                      <span className="category-name">{result.name}</span>
+                      <span className="search-result-type">
+                        {result.entityTypeLabel}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         )}
+
+        {!loading &&
+          !error &&
+          !selectedMineral &&
+          searchResults === null &&
+          items.length > 0 && (
+            <ul className="category-list">
+              {items.map((item) => (
+                <li key={item} className="category-item">
+                  <button
+                    className="category-button"
+                    onClick={() => handleItemClick(item)}
+                  >
+                    <span className="category-name">{item}</span>
+                    <span className="category-arrow">→</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
 
         {!loading && !error && selectedMineral && (
           <section className="mineral-details">

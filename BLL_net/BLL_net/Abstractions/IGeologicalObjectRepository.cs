@@ -23,4 +23,8 @@ public interface IGeologicalObjectRepository
         int? mineralId,
         string? mineralName,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SearchResult>> SearchAsync(
+        string query,
+        CancellationToken cancellationToken = default);
 }

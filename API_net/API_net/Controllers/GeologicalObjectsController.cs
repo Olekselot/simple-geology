@@ -92,6 +92,27 @@ public class GeologicalObjectsController : ControllerBase
         }
     }
 
+    [HttpGet("search")]
+    public async Task<ActionResult<IEnumerable<SearchResultDto>>> Search(
+        [FromQuery] string query,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Trim().Length < 3)
+        {
+            return BadRequest(new { error = "query must be at least 3 characters" });
+        }
+
+        try
+        {
+            var results = await _service.SearchAsync(query.Trim(), cancellationToken);
+            return Ok(results.Select(r => new SearchResultDto(r.Name, r.EntityType, GetEntityTypeLabel(r.EntityType))));
+        }
+        catch (Exception ex)
+        {
+            return Error<IEnumerable<SearchResultDto>>(ex.Message);
+        }
+    }
+
     [HttpGet("minerals/characteristics")]
     public async Task<ActionResult<MineralCharacteristicDto>> GetMineralCharacteristics(
         [FromQuery] int? mineralId,
@@ -188,6 +209,18 @@ public class GeologicalObjectsController : ControllerBase
             item.SpecialProperties,
             item.Notes);
     }
+
+    private static string GetEntityTypeLabel(string entityType) => entityType switch
+    {
+        "top-level"          => "Верхня категорія",
+        "rock-type"          => "Тип породи",
+        "rock-subtype"       => "Підтип породи",
+        "rock"               => "Гірська порода",
+        "silicate-structure" => "Силікатна структура",
+        "mineral-class"      => "Клас мінералів",
+        "mineral"            => "Мінерал",
+        _                    => entityType
+    };
 
     private static ObjectResult Error<T>(string message)
     {

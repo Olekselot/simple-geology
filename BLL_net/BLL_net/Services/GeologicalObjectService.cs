@@ -75,4 +75,11 @@ public class GeologicalObjectService : IGeologicalObjectService
     {
         return _repository.GetMineralCharacteristicAsync(mineralId, mineralName, cancellationToken);
     }
+
+    public Task<IReadOnlyList<SearchResult>> SearchAsync(
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        return _repository.SearchAsync(query, cancellationToken);
+    }
 }
