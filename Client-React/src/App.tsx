@@ -37,6 +37,71 @@ interface SearchResultDto {
   entityTypeLabel: string;
 }
 
+interface MineralSearchResultDto {
+  mineralId: number;
+  mineralName: string;
+  mineralClass: string | null;
+  silicateStructure: string | null;
+  chemicalFormula: string | null;
+  hardnessMohs: number | null;
+  specificGravity: number | null;
+  color: string | null;
+  luster: string | null;
+  magnetism: boolean;
+}
+
+interface MineralFilterState {
+  chemicalFormula: string;
+  mineralClass: string;
+  silicateStructure: string;
+  luster: string;
+  color: string;
+  streak: string;
+  transparency: string;
+  cleavage: string;
+  fracture: string;
+  tenacity: string;
+  morphology: string;
+  paragenesis: string;
+  specialProperties: string;
+  notes: string;
+  description: string;
+  commonUse: string;
+  hardnessMin: string;
+  hardnessMax: string;
+  specificGravityMin: string;
+  specificGravityMax: string;
+  magnetism: "any" | "true" | "false";
+  hasSilicateStructure: "any" | "true" | "false";
+  hasCharacteristics: "any" | "true" | "false";
+}
+
+const EMPTY_MINERAL_FILTERS: MineralFilterState = {
+  chemicalFormula: "",
+  mineralClass: "",
+  silicateStructure: "",
+  luster: "",
+  color: "",
+  streak: "",
+  transparency: "",
+  cleavage: "",
+  fracture: "",
+  tenacity: "",
+  morphology: "",
+  paragenesis: "",
+  specialProperties: "",
+  notes: "",
+  description: "",
+  commonUse: "",
+  hardnessMin: "",
+  hardnessMax: "",
+  specificGravityMin: "",
+  specificGravityMax: "",
+  magnetism: "any",
+  hasSilicateStructure: "any",
+  hasCharacteristics: "any",
+};
+
 const getErrorText = async (response: Response, fallback: string) => {
   try {
     const payload = await response.json();
@@ -82,6 +147,13 @@ function App() {
     null,
   );
   const [searchLoading, setSearchLoading] = useState(false);
+  const [filterMode, setFilterMode] = useState(false);
+  const [mineralFilters, setMineralFilters] = useState<MineralFilterState>(
+    EMPTY_MINERAL_FILTERS,
+  );
+  const [mineralSearchResults, setMineralSearchResults] = useState<
+    MineralSearchResultDto[] | null
+  >(null);
 
   const loadItems = async (level: string, selectedName?: string) => {
     setLoading(true);
@@ -89,6 +161,7 @@ function App() {
     setSelectedMineral(null);
     setSearchQuery("");
     setSearchResults(null);
+    setMineralSearchResults(null);
 
     try {
       let endpoint: string;
@@ -176,33 +249,159 @@ function App() {
     }
   };
 
+  const loadMineralCharacteristicsById = async (mineralId: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/minerals/characteristics?mineralId=${mineralId}`,
+      );
+
+      if (!response.ok) {
+        const message = await getErrorText(
+          response,
+          "Не вдалося завантажити характеристики мінералу",
+        );
+        throw new Error(message);
+      }
+
+      const data: MineralCharacteristic = await response.json();
+      setSelectedMineral(data);
+      setCurrentLevel("mineral-details");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Невідома помилка",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    if (searchQuery.length < 3) {
-      setSearchResults(null);
+    const hasFilterValues = Object.entries(mineralFilters).some(
+      ([key, value]) => {
+        if (
+          key === "magnetism" ||
+          key === "hasSilicateStructure" ||
+          key === "hasCharacteristics"
+        ) {
+          return value !== "any";
+        }
+
+        return value.trim().length > 0;
+      },
+    );
+
+    if (!filterMode) {
+      setMineralSearchResults(null);
+
+      if (searchQuery.length < 3) {
+        setSearchResults(null);
+        return;
+      }
+
+      const timer = setTimeout(async () => {
+        setSearchLoading(true);
+        try {
+          const response = await fetch(
+            `${API_URL}/search?query=${encodeURIComponent(searchQuery)}`,
+          );
+          if (!response.ok) {
+            const message = await getErrorText(response, "Помилка пошуку");
+            throw new Error(message);
+          }
+          const data: SearchResultDto[] = await response.json();
+          setSearchResults(data);
+        } catch {
+          setSearchResults([]);
+        } finally {
+          setSearchLoading(false);
+        }
+      }, 350);
+
+      return () => clearTimeout(timer);
+    }
+
+    setSearchResults(null);
+    if (!hasFilterValues && searchQuery.length < 3) {
+      setMineralSearchResults(null);
       return;
     }
 
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       try {
+        const params = new URLSearchParams();
+        if (searchQuery.trim().length > 0) {
+          params.set("query", searchQuery.trim());
+        }
+
+        const appendIfValue = (key: string, value: string) => {
+          const normalized = value.trim();
+          if (normalized.length > 0) {
+            params.set(key, normalized);
+          }
+        };
+
+        appendIfValue("chemicalFormula", mineralFilters.chemicalFormula);
+        appendIfValue("mineralClass", mineralFilters.mineralClass);
+        appendIfValue("silicateStructure", mineralFilters.silicateStructure);
+        appendIfValue("luster", mineralFilters.luster);
+        appendIfValue("color", mineralFilters.color);
+        appendIfValue("streak", mineralFilters.streak);
+        appendIfValue("transparency", mineralFilters.transparency);
+        appendIfValue("cleavage", mineralFilters.cleavage);
+        appendIfValue("fracture", mineralFilters.fracture);
+        appendIfValue("tenacity", mineralFilters.tenacity);
+        appendIfValue("morphology", mineralFilters.morphology);
+        appendIfValue("paragenesis", mineralFilters.paragenesis);
+        appendIfValue("specialProperties", mineralFilters.specialProperties);
+        appendIfValue("notes", mineralFilters.notes);
+        appendIfValue("description", mineralFilters.description);
+        appendIfValue("commonUse", mineralFilters.commonUse);
+        appendIfValue("hardnessMin", mineralFilters.hardnessMin);
+        appendIfValue("hardnessMax", mineralFilters.hardnessMax);
+        appendIfValue("specificGravityMin", mineralFilters.specificGravityMin);
+        appendIfValue("specificGravityMax", mineralFilters.specificGravityMax);
+
+        if (mineralFilters.magnetism !== "any") {
+          params.set("magnetism", mineralFilters.magnetism);
+        }
+        if (mineralFilters.hasSilicateStructure !== "any") {
+          params.set(
+            "hasSilicateStructure",
+            mineralFilters.hasSilicateStructure,
+          );
+        }
+        if (mineralFilters.hasCharacteristics !== "any") {
+          params.set("hasCharacteristics", mineralFilters.hasCharacteristics);
+        }
+
         const response = await fetch(
-          `${API_URL}/search?query=${encodeURIComponent(searchQuery)}`,
+          `${API_URL}/search/minerals?${params.toString()}`,
         );
         if (!response.ok) {
-          const message = await getErrorText(response, "Помилка пошуку");
+          const message = await getErrorText(
+            response,
+            "Помилка пошуку за фільтрами",
+          );
           throw new Error(message);
         }
-        const data: SearchResultDto[] = await response.json();
-        setSearchResults(data);
+
+        const data: MineralSearchResultDto[] = await response.json();
+        setMineralSearchResults(data);
       } catch {
-        setSearchResults([]);
+        setMineralSearchResults([]);
       } finally {
         setSearchLoading(false);
       }
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, filterMode, mineralFilters]);
 
   const handleItemClick = (itemName: string) => {
     const newStep: NavigationStep = {
@@ -241,6 +440,37 @@ function App() {
     void loadItems(result.entityType, result.name);
   };
 
+  const handleMineralFilterResultClick = (result: MineralSearchResultDto) => {
+    setNavigationPath([
+      { level: "mineral", name: result.mineralName, label: result.mineralName },
+    ]);
+    void loadMineralCharacteristicsById(result.mineralId);
+  };
+
+  const toggleFilterMode = () => {
+    setFilterMode((prev) => {
+      const next = !prev;
+      setSearchResults(null);
+      setMineralSearchResults(null);
+      if (!next) {
+        setMineralFilters(EMPTY_MINERAL_FILTERS);
+      }
+      return next;
+    });
+  };
+
+  const updateMineralFilter = (
+    key: keyof MineralFilterState,
+    value: string,
+  ) => {
+    setMineralFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const clearMineralFilters = () => {
+    setMineralFilters(EMPTY_MINERAL_FILTERS);
+    setMineralSearchResults(null);
+  };
+
   const handleBack = () => {
     if (navigationPath.length === 0) return;
 
@@ -252,6 +482,7 @@ function App() {
       setCurrentLevel("mineral");
       setSearchQuery("");
       setSearchResults(null);
+      setMineralSearchResults(null);
       return;
     }
 
@@ -303,16 +534,246 @@ function App() {
 
         {!selectedMineral && (
           <div className="search-box">
+            <div className="search-mode-row">
+              <label className="search-mode-toggle">
+                <input
+                  type="checkbox"
+                  checked={filterMode}
+                  onChange={toggleFilterMode}
+                />
+                <span>Режим фільтрів мінералів</span>
+              </label>
+              {filterMode && (
+                <button
+                  type="button"
+                  className="filters-reset-button"
+                  onClick={clearMineralFilters}
+                >
+                  Скинути фільтри
+                </button>
+              )}
+            </div>
+
             <input
               type="text"
               className="search-input"
-              placeholder="Пошук за назвою (від 3 символів)..."
+              placeholder={
+                filterMode
+                  ? "Пошук мінералу за назвою (без фільтрів: від 3 символів)..."
+                  : "Пошук за назвою (від 3 символів)..."
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            {searchQuery.length > 0 && searchQuery.length < 3 && (
+
+            {!filterMode &&
+              searchQuery.length > 0 &&
+              searchQuery.length < 3 && (
+                <span className="search-hint">
+                  Введіть ще {3 - searchQuery.length} символ(и)
+                </span>
+              )}
+
+            {filterMode && (
+              <div className="filters-grid">
+                <input
+                  className="filter-input"
+                  placeholder="Хімічна формула"
+                  value={mineralFilters.chemicalFormula}
+                  onChange={(e) =>
+                    updateMineralFilter("chemicalFormula", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Клас мінералу"
+                  value={mineralFilters.mineralClass}
+                  onChange={(e) =>
+                    updateMineralFilter("mineralClass", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Силікатна структура"
+                  value={mineralFilters.silicateStructure}
+                  onChange={(e) =>
+                    updateMineralFilter("silicateStructure", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Блиск"
+                  value={mineralFilters.luster}
+                  onChange={(e) =>
+                    updateMineralFilter("luster", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Колір"
+                  value={mineralFilters.color}
+                  onChange={(e) => updateMineralFilter("color", e.target.value)}
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Риса"
+                  value={mineralFilters.streak}
+                  onChange={(e) =>
+                    updateMineralFilter("streak", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Прозорість"
+                  value={mineralFilters.transparency}
+                  onChange={(e) =>
+                    updateMineralFilter("transparency", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Спайність"
+                  value={mineralFilters.cleavage}
+                  onChange={(e) =>
+                    updateMineralFilter("cleavage", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Злам"
+                  value={mineralFilters.fracture}
+                  onChange={(e) =>
+                    updateMineralFilter("fracture", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Ковкість"
+                  value={mineralFilters.tenacity}
+                  onChange={(e) =>
+                    updateMineralFilter("tenacity", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Морфологія"
+                  value={mineralFilters.morphology}
+                  onChange={(e) =>
+                    updateMineralFilter("morphology", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Парагенезис"
+                  value={mineralFilters.paragenesis}
+                  onChange={(e) =>
+                    updateMineralFilter("paragenesis", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Особливі властивості"
+                  value={mineralFilters.specialProperties}
+                  onChange={(e) =>
+                    updateMineralFilter("specialProperties", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Нотатки"
+                  value={mineralFilters.notes}
+                  onChange={(e) => updateMineralFilter("notes", e.target.value)}
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Опис"
+                  value={mineralFilters.description}
+                  onChange={(e) =>
+                    updateMineralFilter("description", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Застосування"
+                  value={mineralFilters.commonUse}
+                  onChange={(e) =>
+                    updateMineralFilter("commonUse", e.target.value)
+                  }
+                />
+
+                <input
+                  className="filter-input"
+                  placeholder="Твердість Mohs від"
+                  value={mineralFilters.hardnessMin}
+                  onChange={(e) =>
+                    updateMineralFilter("hardnessMin", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Твердість Mohs до"
+                  value={mineralFilters.hardnessMax}
+                  onChange={(e) =>
+                    updateMineralFilter("hardnessMax", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Питома вага від"
+                  value={mineralFilters.specificGravityMin}
+                  onChange={(e) =>
+                    updateMineralFilter("specificGravityMin", e.target.value)
+                  }
+                />
+                <input
+                  className="filter-input"
+                  placeholder="Питома вага до"
+                  value={mineralFilters.specificGravityMax}
+                  onChange={(e) =>
+                    updateMineralFilter("specificGravityMax", e.target.value)
+                  }
+                />
+
+                <select
+                  className="filter-input"
+                  value={mineralFilters.magnetism}
+                  onChange={(e) =>
+                    updateMineralFilter("magnetism", e.target.value)
+                  }
+                >
+                  <option value="any">Магнетизм: будь-який</option>
+                  <option value="true">Магнетизм: так</option>
+                  <option value="false">Магнетизм: ні</option>
+                </select>
+                <select
+                  className="filter-input"
+                  value={mineralFilters.hasSilicateStructure}
+                  onChange={(e) =>
+                    updateMineralFilter("hasSilicateStructure", e.target.value)
+                  }
+                >
+                  <option value="any">Силікатна структура: будь-яка</option>
+                  <option value="true">Силікатна структура: є</option>
+                  <option value="false">Силікатна структура: немає</option>
+                </select>
+                <select
+                  className="filter-input"
+                  value={mineralFilters.hasCharacteristics}
+                  onChange={(e) =>
+                    updateMineralFilter("hasCharacteristics", e.target.value)
+                  }
+                >
+                  <option value="any">Характеристики: будь-які</option>
+                  <option value="true">Характеристики: є</option>
+                  <option value="false">Характеристики: немає</option>
+                </select>
+              </div>
+            )}
+
+            {filterMode && (
               <span className="search-hint">
-                Введіть ще {3 - searchQuery.length} символ(и)
+                Фільтри шукають тільки мінерали по всій БД, незалежно від
+                поточної категорії.
               </span>
             )}
           </div>
@@ -327,7 +788,7 @@ function App() {
 
         {searchLoading && <p className="message loading">Пошук...</p>}
 
-        {!searchLoading && searchResults !== null && (
+        {!searchLoading && !filterMode && searchResults !== null && (
           <>
             {searchResults.length === 0 ? (
               <p className="message">
@@ -353,10 +814,49 @@ function App() {
           </>
         )}
 
+        {!searchLoading && filterMode && mineralSearchResults !== null && (
+          <>
+            {mineralSearchResults.length === 0 ? (
+              <p className="message">
+                Нічого не знайдено за вказаними фільтрами.
+              </p>
+            ) : (
+              <ul className="category-list">
+                {mineralSearchResults.map((result) => (
+                  <li key={result.mineralId} className="category-item">
+                    <button
+                      className="category-button"
+                      onClick={() => handleMineralFilterResultClick(result)}
+                    >
+                      <div className="filter-result-main">
+                        <span className="category-name">
+                          {result.mineralName}
+                        </span>
+                        <span className="search-result-type">Мінерал</span>
+                      </div>
+                      <span className="filter-result-meta">
+                        {result.mineralClass || "Без класу"}
+                        {result.chemicalFormula
+                          ? ` • ${result.chemicalFormula}`
+                          : ""}
+                        {result.hardnessMohs !== null
+                          ? ` • Mohs ${result.hardnessMohs}`
+                          : ""}
+                        {result.magnetism ? " • Магнітний" : ""}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+
         {!loading &&
           !error &&
           !selectedMineral &&
           searchResults === null &&
+          mineralSearchResults === null &&
           items.length > 0 && (
             <ul className="category-list">
               {items.map((item) => (

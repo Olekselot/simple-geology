@@ -76,5 +76,10 @@ public class GeologicalObjectServiceTests
         {
             return Task.FromResult<IReadOnlyList<SearchResult>>([]);
         }
+
+        public Task<IReadOnlyList<MineralSearchResult>> SearchMineralsAsync(MineralSearchFilters filters, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<MineralSearchResult>>([]);
+        }
     }
 }

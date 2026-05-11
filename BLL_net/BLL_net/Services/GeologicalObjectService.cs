@@ -82,4 +82,57 @@ public class GeologicalObjectService : IGeologicalObjectService
     {
         return _repository.SearchAsync(query, cancellationToken);
     }
+
+    public Task<IReadOnlyList<MineralSearchResult>> SearchMineralsAsync(
+        MineralSearchFilters filters,
+        CancellationToken cancellationToken = default)
+    {
+        if (filters.HardnessMin.HasValue && filters.HardnessMax.HasValue && filters.HardnessMin > filters.HardnessMax)
+        {
+            throw new ArgumentException("hardnessMin cannot be greater than hardnessMax");
+        }
+
+        if (filters.SpecificGravityMin.HasValue && filters.SpecificGravityMax.HasValue && filters.SpecificGravityMin > filters.SpecificGravityMax)
+        {
+            throw new ArgumentException("specificGravityMin cannot be greater than specificGravityMax");
+        }
+
+        var safeLimit = filters.Limit switch
+        {
+            <= 0 => 100,
+            > 300 => 300,
+            _ => filters.Limit
+        };
+
+        var normalizedFilters = new MineralSearchFilters
+        {
+            Query = filters.Query?.Trim(),
+            ChemicalFormula = filters.ChemicalFormula?.Trim(),
+            MineralClass = filters.MineralClass?.Trim(),
+            SilicateStructure = filters.SilicateStructure?.Trim(),
+            Luster = filters.Luster?.Trim(),
+            Color = filters.Color?.Trim(),
+            Streak = filters.Streak?.Trim(),
+            Transparency = filters.Transparency?.Trim(),
+            Cleavage = filters.Cleavage?.Trim(),
+            Fracture = filters.Fracture?.Trim(),
+            Tenacity = filters.Tenacity?.Trim(),
+            Morphology = filters.Morphology?.Trim(),
+            Paragenesis = filters.Paragenesis?.Trim(),
+            SpecialProperties = filters.SpecialProperties?.Trim(),
+            Notes = filters.Notes?.Trim(),
+            Description = filters.Description?.Trim(),
+            CommonUse = filters.CommonUse?.Trim(),
+            HardnessMin = filters.HardnessMin,
+            HardnessMax = filters.HardnessMax,
+            SpecificGravityMin = filters.SpecificGravityMin,
+            SpecificGravityMax = filters.SpecificGravityMax,
+            Magnetism = filters.Magnetism,
+            HasSilicateStructure = filters.HasSilicateStructure,
+            HasCharacteristics = filters.HasCharacteristics,
+            Limit = safeLimit
+        };
+
+        return _repository.SearchMineralsAsync(normalizedFilters, cancellationToken);
+    }
 }

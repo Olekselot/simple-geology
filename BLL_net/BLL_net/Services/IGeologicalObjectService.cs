@@ -27,4 +27,8 @@ public interface IGeologicalObjectService
     Task<IReadOnlyList<SearchResult>> SearchAsync(
         string query,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<MineralSearchResult>> SearchMineralsAsync(
+        MineralSearchFilters filters,
+        CancellationToken cancellationToken = default);
 }

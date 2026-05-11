@@ -113,6 +113,72 @@ public class GeologicalObjectsController : ControllerBase
         }
     }
 
+    [HttpGet("search/minerals")]
+    public async Task<ActionResult<IEnumerable<MineralSearchResultDto>>> SearchMinerals(
+        [FromQuery] MineralSearchFiltersDto filters,
+        CancellationToken cancellationToken)
+    {
+        var hasFilters = HasAnyMineralFilters(filters);
+        if (!hasFilters && (string.IsNullOrWhiteSpace(filters.Query) || filters.Query.Trim().Length < 3))
+        {
+            return BadRequest(new { error = "query must be at least 3 characters when filters are not set" });
+        }
+
+        try
+        {
+            var results = await _service.SearchMineralsAsync(
+                new MineralSearchFilters
+                {
+                    Query = filters.Query,
+                    ChemicalFormula = filters.ChemicalFormula,
+                    MineralClass = filters.MineralClass,
+                    SilicateStructure = filters.SilicateStructure,
+                    Luster = filters.Luster,
+                    Color = filters.Color,
+                    Streak = filters.Streak,
+                    Transparency = filters.Transparency,
+                    Cleavage = filters.Cleavage,
+                    Fracture = filters.Fracture,
+                    Tenacity = filters.Tenacity,
+                    Morphology = filters.Morphology,
+                    Paragenesis = filters.Paragenesis,
+                    SpecialProperties = filters.SpecialProperties,
+                    Notes = filters.Notes,
+                    Description = filters.Description,
+                    CommonUse = filters.CommonUse,
+                    HardnessMin = filters.HardnessMin,
+                    HardnessMax = filters.HardnessMax,
+                    SpecificGravityMin = filters.SpecificGravityMin,
+                    SpecificGravityMax = filters.SpecificGravityMax,
+                    Magnetism = filters.Magnetism,
+                    HasSilicateStructure = filters.HasSilicateStructure,
+                    HasCharacteristics = filters.HasCharacteristics,
+                    Limit = filters.Limit ?? 100
+                },
+                cancellationToken);
+
+            return Ok(results.Select(x => new MineralSearchResultDto(
+                x.MineralId,
+                x.MineralName,
+                x.MineralClass,
+                x.SilicateStructure,
+                x.ChemicalFormula,
+                x.HardnessMohs,
+                x.SpecificGravity,
+                x.Color,
+                x.Luster,
+                x.Magnetism)));
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Error<IEnumerable<MineralSearchResultDto>>(ex.Message);
+        }
+    }
+
     [HttpGet("minerals/characteristics")]
     public async Task<ActionResult<MineralCharacteristicDto>> GetMineralCharacteristics(
         [FromQuery] int? mineralId,
@@ -228,5 +294,33 @@ public class GeologicalObjectsController : ControllerBase
         {
             StatusCode = StatusCodes.Status500InternalServerError
         };
+    }
+
+    private static bool HasAnyMineralFilters(MineralSearchFiltersDto filters)
+    {
+        return
+            !string.IsNullOrWhiteSpace(filters.ChemicalFormula) ||
+            !string.IsNullOrWhiteSpace(filters.MineralClass) ||
+            !string.IsNullOrWhiteSpace(filters.SilicateStructure) ||
+            !string.IsNullOrWhiteSpace(filters.Luster) ||
+            !string.IsNullOrWhiteSpace(filters.Color) ||
+            !string.IsNullOrWhiteSpace(filters.Streak) ||
+            !string.IsNullOrWhiteSpace(filters.Transparency) ||
+            !string.IsNullOrWhiteSpace(filters.Cleavage) ||
+            !string.IsNullOrWhiteSpace(filters.Fracture) ||
+            !string.IsNullOrWhiteSpace(filters.Tenacity) ||
+            !string.IsNullOrWhiteSpace(filters.Morphology) ||
+            !string.IsNullOrWhiteSpace(filters.Paragenesis) ||
+            !string.IsNullOrWhiteSpace(filters.SpecialProperties) ||
+            !string.IsNullOrWhiteSpace(filters.Notes) ||
+            !string.IsNullOrWhiteSpace(filters.Description) ||
+            !string.IsNullOrWhiteSpace(filters.CommonUse) ||
+            filters.HardnessMin.HasValue ||
+            filters.HardnessMax.HasValue ||
+            filters.SpecificGravityMin.HasValue ||
+            filters.SpecificGravityMax.HasValue ||
+            filters.Magnetism.HasValue ||
+            filters.HasSilicateStructure.HasValue ||
+            filters.HasCharacteristics.HasValue;
     }
 }

@@ -260,6 +260,177 @@ public class EfGeologicalObjectRepository : IGeologicalObjectRepository
         return results;
     }
 
+    public async Task<IReadOnlyList<MineralSearchResult>> SearchMineralsAsync(
+        MineralSearchFilters filters,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Minerals
+            .AsNoTracking()
+            .Include(x => x.MineralClass)
+            .Include(x => x.SilicateStructure)
+            .Include(x => x.Characteristic)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filters.Query))
+        {
+            var pattern = $"%{filters.Query}%";
+            query = query.Where(x => EF.Functions.ILike(x.Name, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.ChemicalFormula))
+        {
+            var pattern = $"%{filters.ChemicalFormula}%";
+            query = query.Where(x => x.ChemicalFormula != null && EF.Functions.ILike(x.ChemicalFormula, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.MineralClass))
+        {
+            var pattern = $"%{filters.MineralClass}%";
+            query = query.Where(x => EF.Functions.ILike(x.MineralClass.Name, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.SilicateStructure))
+        {
+            var pattern = $"%{filters.SilicateStructure}%";
+            query = query.Where(x => x.SilicateStructure != null && EF.Functions.ILike(x.SilicateStructure.Name, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Luster))
+        {
+            var pattern = $"%{filters.Luster}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Luster != null && EF.Functions.ILike(x.Characteristic.Luster, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Color))
+        {
+            var pattern = $"%{filters.Color}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Color != null && EF.Functions.ILike(x.Characteristic.Color, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Streak))
+        {
+            var pattern = $"%{filters.Streak}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Streak != null && EF.Functions.ILike(x.Characteristic.Streak, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Transparency))
+        {
+            var pattern = $"%{filters.Transparency}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Transparency != null && EF.Functions.ILike(x.Characteristic.Transparency, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Cleavage))
+        {
+            var pattern = $"%{filters.Cleavage}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Cleavage != null && EF.Functions.ILike(x.Characteristic.Cleavage, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Fracture))
+        {
+            var pattern = $"%{filters.Fracture}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Fracture != null && EF.Functions.ILike(x.Characteristic.Fracture, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Tenacity))
+        {
+            var pattern = $"%{filters.Tenacity}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Tenacity != null && EF.Functions.ILike(x.Characteristic.Tenacity, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Morphology))
+        {
+            var pattern = $"%{filters.Morphology}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Morphology != null && EF.Functions.ILike(x.Characteristic.Morphology, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Paragenesis))
+        {
+            var pattern = $"%{filters.Paragenesis}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Paragenesis != null && EF.Functions.ILike(x.Characteristic.Paragenesis, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.SpecialProperties))
+        {
+            var pattern = $"%{filters.SpecialProperties}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.SpecialProperties != null && EF.Functions.ILike(x.Characteristic.SpecialProperties, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Notes))
+        {
+            var pattern = $"%{filters.Notes}%";
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Notes != null && EF.Functions.ILike(x.Characteristic.Notes, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.Description))
+        {
+            var pattern = $"%{filters.Description}%";
+            query = query.Where(x => x.Description != null && EF.Functions.ILike(x.Description, pattern));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.CommonUse))
+        {
+            var pattern = $"%{filters.CommonUse}%";
+            query = query.Where(x => x.CommonUse != null && EF.Functions.ILike(x.CommonUse, pattern));
+        }
+
+        if (filters.HardnessMin.HasValue)
+        {
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.HardnessMohs >= filters.HardnessMin.Value);
+        }
+
+        if (filters.HardnessMax.HasValue)
+        {
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.HardnessMohs <= filters.HardnessMax.Value);
+        }
+
+        if (filters.SpecificGravityMin.HasValue)
+        {
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.SpecificGravity >= filters.SpecificGravityMin.Value);
+        }
+
+        if (filters.SpecificGravityMax.HasValue)
+        {
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.SpecificGravity <= filters.SpecificGravityMax.Value);
+        }
+
+        if (filters.Magnetism.HasValue)
+        {
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.Magnetism == filters.Magnetism.Value);
+        }
+
+        if (filters.HasSilicateStructure.HasValue)
+        {
+            query = filters.HasSilicateStructure.Value
+                ? query.Where(x => x.SilicateStructureId != null)
+                : query.Where(x => x.SilicateStructureId == null);
+        }
+
+        if (filters.HasCharacteristics.HasValue)
+        {
+            query = filters.HasCharacteristics.Value
+                ? query.Where(x => x.Characteristic != null)
+                : query.Where(x => x.Characteristic == null);
+        }
+
+        var minerals = await query
+            .OrderBy(x => x.Name)
+            .Take(filters.Limit)
+            .Select(x => new MineralSearchResult(
+                x.Id,
+                x.Name,
+                x.MineralClass.Name,
+                x.SilicateStructure != null ? x.SilicateStructure.Name : null,
+                x.ChemicalFormula,
+                x.Characteristic != null ? x.Characteristic.HardnessMohs : null,
+                x.Characteristic != null ? x.Characteristic.SpecificGravity : null,
+                x.Characteristic != null ? x.Characteristic.Color : null,
+                x.Characteristic != null ? x.Characteristic.Luster : null,
+                x.Characteristic != null && x.Characteristic.Magnetism))
+            .ToListAsync(cancellationToken);
+
+        return minerals;
+    }
+
     private static async Task<IReadOnlyList<string>> GetTopLevelChildrenAsync(
         NpgsqlConnection connection,
         string topLevelName,
