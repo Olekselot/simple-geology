@@ -9,4 +9,13 @@ public interface IGeologicalObjectService
     Task<GeologicalObject?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     Task<GeologicalObject> AddAsync(CreateGeologicalObjectRequest request, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> GetTopLevelClassNamesAsync(CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> GetChildClassNamesAsync(string topLevelName, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<string>> GetChildrenLevelClassNamesAsync(
+        string currentLevel,
+        string selectedName,
+        CancellationToken cancellationToken = default);
 }

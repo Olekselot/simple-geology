@@ -8,7 +8,7 @@ public class GeologyDbContextFactory : IDesignTimeDbContextFactory<GeologyDbCont
     public GeologyDbContext CreateDbContext(string[] args)
     {
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
-            ?? "Host=localhost;Port=5432;Database=SimpleGeologyDb;Username=postgres;Password=postgres";
+            ?? "Host=localhost;Port=5432;Database=GeologyDB;Username=postgres;Password=postgres";
 
         var optionsBuilder = new DbContextOptionsBuilder<GeologyDbContext>();
         optionsBuilder.UseNpgsql(connectionString);

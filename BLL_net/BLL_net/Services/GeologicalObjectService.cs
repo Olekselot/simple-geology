@@ -49,4 +49,22 @@ public class GeologicalObjectService : IGeologicalObjectService
 
         return _repository.AddAsync(geologicalObject, cancellationToken);
     }
+
+    public Task<IReadOnlyList<string>> GetTopLevelClassNamesAsync(CancellationToken cancellationToken = default)
+    {
+        return _repository.GetTopLevelClassNamesAsync(cancellationToken);
+    }
+
+    public Task<IReadOnlyList<string>> GetChildClassNamesAsync(string topLevelName, CancellationToken cancellationToken = default)
+    {
+        return _repository.GetChildClassNamesAsync(topLevelName, cancellationToken);
+    }
+
+    public Task<IReadOnlyList<string>> GetChildrenLevelClassNamesAsync(
+        string currentLevel,
+        string selectedName,
+        CancellationToken cancellationToken = default)
+    {
+        return _repository.GetChildrenLevelClassNamesAsync(currentLevel, selectedName, cancellationToken);
+    }
 }

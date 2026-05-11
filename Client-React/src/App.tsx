@@ -1,18 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
-
-type GeologicalObject = {
-  id: number;
-  name: string;
-  type: string;
-  depthMeters: number;
-  description: string;
-};
 
 const API_URL =
   import.meta.env.VITE_API_BASE ??
   "http://localhost:5033/api/geologicalobjects";
+
+interface NavigationStep {
+  level: string;
+  name: string;
+  label: string;
+}
 
 const getErrorText = async (response: Response, fallback: string) => {
   try {
@@ -32,27 +29,42 @@ const getErrorText = async (response: Response, fallback: string) => {
   return fallback;
 };
 
+const getLevelLabel = (level: string): string => {
+  const labels: Record<string, string> = {
+    "top-level": "Верхні категорії",
+    "rock-type": "Типи гірських порід",
+    "rock-subtype": "Підтипи гірських порід",
+    rock: "Гірські породи",
+    "silicate-structure": "Силікатні структури",
+    "mineral-class": "Класи мінералів",
+    mineral: "Мінерали",
+  };
+  return labels[level] || level;
+};
+
 function App() {
-  const [items, setItems] = useState<GeologicalObject[]>([]);
+  const [items, setItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [navigationPath, setNavigationPath] = useState<NavigationStep[]>([]);
+  const [currentLevel, setCurrentLevel] = useState<string>("top-level");
 
-  const [name, setName] = useState("");
-  const [type, setType] = useState("");
-  const [depthMeters, setDepthMeters] = useState(0);
-  const [description, setDescription] = useState("");
-
-  const sortedItems = useMemo(
-    () => [...items].sort((a, b) => a.depthMeters - b.depthMeters),
-    [items],
-  );
-
-  const loadItems = async () => {
+  const loadItems = async (level: string, selectedName?: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(API_URL);
+      let endpoint: string;
+
+      // If no selectedName is provided and level is "top-level", get top-level categories.
+      // Otherwise, drill down to the children level.
+      if (level === "top-level" && !selectedName) {
+        endpoint = `${API_URL}/classes/top-level`;
+      } else {
+        endpoint = `${API_URL}/classes/cildren-level?currentLevel=${encodeURIComponent(level)}&selectedName=${encodeURIComponent(selectedName || "")}`;
+      }
+
+      const response = await fetch(endpoint);
       if (!response.ok) {
         const message = await getErrorText(
           response,
@@ -61,149 +73,128 @@ function App() {
         throw new Error(message);
       }
 
-      const data: GeologicalObject[] = await response.json();
+      const data: string[] = await response.json();
       setItems(data);
+
+      // Determine the next level to use when items are clicked
+      let nextLevel = level;
+      if (level === "top-level") {
+        if (selectedName === "Гірські породи") {
+          nextLevel = "rock-type";
+        } else if (selectedName === "Силікати") {
+          nextLevel = "silicate-structure";
+        } else if (selectedName === "Мінерали") {
+          nextLevel = "mineral-class";
+        }
+      } else if (level === "rock-type") {
+        nextLevel = "rock-subtype";
+      } else if (level === "rock-subtype") {
+        nextLevel = "rock";
+      } else if (level === "rock") {
+        nextLevel = "mineral";
+      } else if (level === "silicate-structure" || level === "mineral-class") {
+        nextLevel = "mineral";
+      }
+      setCurrentLevel(nextLevel);
     } catch (requestError) {
       setError(
         requestError instanceof Error
           ? requestError.message
           : "Невідома помилка",
       );
+      setCurrentLevel(level);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    void loadItems();
-  }, []);
+  const handleItemClick = (itemName: string) => {
+    const newStep: NavigationStep = {
+      level: currentLevel,
+      name: itemName,
+      label: itemName,
+    };
 
-  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
+    setNavigationPath([...navigationPath, newStep]);
 
-    try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          type,
-          depthMeters,
-          description,
-        }),
-      });
+    // The actual next level will be determined by the backend
+    // We keep currentLevel and send it with selectedName
+    void loadItems(currentLevel, itemName);
+  };
 
-      if (!response.ok) {
-        const message = await getErrorText(
-          response,
-          "Не вдалося створити геологічний обʼєкт",
-        );
-        throw new Error(message);
-      }
+  const handleBack = () => {
+    if (navigationPath.length === 0) return;
 
-      setName("");
-      setType("");
-      setDepthMeters(0);
-      setDescription("");
-      await loadItems();
-    } catch (requestError) {
-      setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Невідома помилка",
-      );
+    const newPath = navigationPath.slice(0, -1);
+    setNavigationPath(newPath);
+
+    if (newPath.length === 0) {
+      setCurrentLevel("top-level");
+      void loadItems("top-level");
+    } else {
+      const previousStep = newPath[newPath.length - 1];
+      setCurrentLevel(previousStep.level);
+      void loadItems(previousStep.level, previousStep.name);
     }
   };
+
+  useEffect(() => {
+    void loadItems("top-level");
+  }, []);
+
+  const breadcrumbPath = [
+    { level: "top-level", label: "Начало" },
+    ...navigationPath,
+  ];
 
   return (
     <main className="page">
       <header className="header">
         <h1>Simple Geology</h1>
-        <p>Курсова: приклад 3-шарової архітектури (React + API + BLL + DAL)</p>
+        <p>Интерактивный справочник геологических объектов</p>
       </header>
 
       <section className="card">
-        <h2>Додати обʼєкт</h2>
-        <form onSubmit={onSubmit} className="form-grid">
-          <label>
-            Назва
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </label>
+        <div className="navigation-header">
+          <div className="breadcrumb">
+            {breadcrumbPath.map((step, index) => (
+              <div key={index} className="breadcrumb-item">
+                {index > 0 && <span className="breadcrumb-separator">→</span>}
+                <span className="breadcrumb-text">{step.label}</span>
+              </div>
+            ))}
+          </div>
 
-          <label>
-            Тип
-            <input
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              required
-            />
-          </label>
+          {navigationPath.length > 0 && (
+            <button className="back-button" onClick={handleBack}>
+              ← Назад
+            </button>
+          )}
+        </div>
 
-          <label>
-            Глибина (м)
-            <input
-              type="number"
-              min={0}
-              step="0.1"
-              value={depthMeters}
-              onChange={(e) => setDepthMeters(Number(e.target.value))}
-              required
-            />
-          </label>
+        <h2>{getLevelLabel(currentLevel)}</h2>
 
-          <label className="full-width">
-            Опис
-            <textarea
-              rows={3}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
+        {loading && <p className="message loading">Завантаження...</p>}
+        {error && <p className="error message">{error}</p>}
 
-          <button type="submit">Зберегти</button>
-        </form>
-      </section>
-
-      <section className="card">
-        <h2>Список обʼєктів</h2>
-
-        {loading && <p>Завантаження...</p>}
-        {error && <p className="error">{error}</p>}
-
-        {!loading && !error && sortedItems.length === 0 && (
-          <p>Поки що немає даних.</p>
+        {!loading && !error && items.length === 0 && (
+          <p className="message">Поки що немає даних.</p>
         )}
 
-        {!loading && !error && sortedItems.length > 0 && (
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Назва</th>
-                <th>Тип</th>
-                <th>Глибина (м)</th>
-                <th>Опис</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedItems.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.id}</td>
-                  <td>{item.name}</td>
-                  <td>{item.type}</td>
-                  <td>{item.depthMeters}</td>
-                  <td>{item.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {!loading && !error && items.length > 0 && (
+          <ul className="category-list">
+            {items.map((item) => (
+              <li key={item} className="category-item">
+                <button
+                  className="category-button"
+                  onClick={() => handleItemClick(item)}
+                >
+                  <span className="category-name">{item}</span>
+                  <span className="category-arrow">→</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </main>

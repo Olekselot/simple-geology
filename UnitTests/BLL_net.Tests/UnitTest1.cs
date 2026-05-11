@@ -51,5 +51,20 @@ public class GeologicalObjectServiceTests
             _items.Add(geologicalObject);
             return Task.FromResult(geologicalObject);
         }
+
+        public Task<IReadOnlyList<string>> GetTopLevelClassNamesAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<string>>([]);
+        }
+
+        public Task<IReadOnlyList<string>> GetChildClassNamesAsync(string topLevelName, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<string>>([]);
+        }
+
+        public Task<IReadOnlyList<string>> GetChildrenLevelClassNamesAsync(string currentLevel, string selectedName, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IReadOnlyList<string>>([]);
+        }
     }
 }

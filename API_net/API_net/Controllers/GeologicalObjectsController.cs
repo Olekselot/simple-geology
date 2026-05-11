@@ -23,6 +23,47 @@ public class GeologicalObjectsController : ControllerBase
         return Ok(items.Select(ToDto));
     }
 
+    [HttpGet("classes/top-level")]
+    public async Task<ActionResult<IEnumerable<string>>> GetTopLevelClasses(CancellationToken cancellationToken)
+    {
+        var items = await _service.GetTopLevelClassNamesAsync(cancellationToken);
+        return Ok(items);
+    }
+
+    [HttpGet("classes/children")]
+    public async Task<ActionResult<IEnumerable<string>>> GetChildClasses(
+        [FromQuery] string topLevelName,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(topLevelName))
+        {
+            return BadRequest(new { error = "topLevelName is required" });
+        }
+
+        var items = await _service.GetChildClassNamesAsync(topLevelName, cancellationToken);
+        return Ok(items);
+    }
+
+    [HttpGet("classes/cildren-level")]
+    public async Task<ActionResult<IEnumerable<string>>> GetChildrenLevelClasses(
+        [FromQuery] string currentLevel,
+        [FromQuery] string selectedName,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(currentLevel))
+        {
+            return BadRequest(new { error = "currentLevel is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(selectedName))
+        {
+            return BadRequest(new { error = "selectedName is required" });
+        }
+
+        var items = await _service.GetChildrenLevelClassNamesAsync(currentLevel, selectedName, cancellationToken);
+        return Ok(items);
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<GeologicalObjectDto>> GetById(int id, CancellationToken cancellationToken)
     {

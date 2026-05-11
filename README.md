@@ -30,7 +30,7 @@ cd API_net/API_net
 
 ```bash
 # Рядок підключення до бази даних (PostgreSQL)
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=SimpleGeologyDb;Username=postgres;Password=YOUR_PASSWORD"
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=GeologyDB;Username=postgres;Password=YOUR_PASSWORD"
 
 # Секрет для підпису JWT-токенів (мінімум 32 символи)
 dotnet user-secrets set "AppSecrets:JwtSecretKey" "YOUR_JWT_SECRET_KEY_MIN_32_CHARS"

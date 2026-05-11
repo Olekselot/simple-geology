@@ -1,4 +1,7 @@
 using DAL_net.Persistence;
+using DAL_net.Repositories;
+using BLL_net.Abstractions;
+using BLL_net.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +30,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<GeologyDbContext>(options =>
     options.UseNpgsql(connectionString));
+builder.Services.AddScoped<IGeologicalObjectRepository, EfGeologicalObjectRepository>();
+builder.Services.AddScoped<IGeologicalObjectService, GeologicalObjectService>();
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy("ClientReact", policy =>
