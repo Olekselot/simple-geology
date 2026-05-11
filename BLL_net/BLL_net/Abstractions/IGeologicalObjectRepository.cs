@@ -18,4 +18,9 @@ public interface IGeologicalObjectRepository
         string currentLevel,
         string selectedName,
         CancellationToken cancellationToken = default);
+
+    Task<MineralCharacteristic?> GetMineralCharacteristicAsync(
+        int? mineralId,
+        string? mineralName,
+        CancellationToken cancellationToken = default);
 }

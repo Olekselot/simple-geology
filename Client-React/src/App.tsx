@@ -11,6 +11,26 @@ interface NavigationStep {
   label: string;
 }
 
+interface MineralCharacteristic {
+  mineralId: number;
+  mineralName: string;
+  chemicalFormula: string | null;
+  luster: string | null;
+  color: string | null;
+  streak: string | null;
+  transparency: string | null;
+  hardnessMohs: number | null;
+  cleavage: string | null;
+  fracture: string | null;
+  tenacity: string | null;
+  specificGravity: number | null;
+  magnetism: boolean;
+  morphology: string | null;
+  paragenesis: string | null;
+  specialProperties: string | null;
+  notes: string | null;
+}
+
 const getErrorText = async (response: Response, fallback: string) => {
   try {
     const payload = await response.json();
@@ -38,6 +58,7 @@ const getLevelLabel = (level: string): string => {
     "silicate-structure": "Силікатні структури",
     "mineral-class": "Класи мінералів",
     mineral: "Мінерали",
+    "mineral-details": "Характеристики мінералу",
   };
   return labels[level] || level;
 };
@@ -48,10 +69,13 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [navigationPath, setNavigationPath] = useState<NavigationStep[]>([]);
   const [currentLevel, setCurrentLevel] = useState<string>("top-level");
+  const [selectedMineral, setSelectedMineral] =
+    useState<MineralCharacteristic | null>(null);
 
   const loadItems = async (level: string, selectedName?: string) => {
     setLoading(true);
     setError(null);
+    setSelectedMineral(null);
 
     try {
       let endpoint: string;
@@ -108,6 +132,37 @@ function App() {
     }
   };
 
+  const loadMineralCharacteristics = async (mineralName: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/minerals/characteristics?mineralName=${encodeURIComponent(mineralName)}`,
+      );
+
+      if (!response.ok) {
+        const message = await getErrorText(
+          response,
+          "Не вдалося завантажити характеристики мінералу",
+        );
+        throw new Error(message);
+      }
+
+      const data: MineralCharacteristic = await response.json();
+      setSelectedMineral(data);
+      setCurrentLevel("mineral-details");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Невідома помилка",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleItemClick = (itemName: string) => {
     const newStep: NavigationStep = {
       level: currentLevel,
@@ -116,6 +171,11 @@ function App() {
     };
 
     setNavigationPath([...navigationPath, newStep]);
+
+    if (currentLevel === "mineral") {
+      void loadMineralCharacteristics(itemName);
+      return;
+    }
 
     // The actual next level will be determined by the backend
     // We keep currentLevel and send it with selectedName
@@ -127,6 +187,12 @@ function App() {
 
     const newPath = navigationPath.slice(0, -1);
     setNavigationPath(newPath);
+
+    if (selectedMineral) {
+      setSelectedMineral(null);
+      setCurrentLevel("mineral");
+      return;
+    }
 
     if (newPath.length === 0) {
       setCurrentLevel("top-level");
@@ -181,7 +247,7 @@ function App() {
           <p className="message">Поки що немає даних.</p>
         )}
 
-        {!loading && !error && items.length > 0 && (
+        {!loading && !error && !selectedMineral && items.length > 0 && (
           <ul className="category-list">
             {items.map((item) => (
               <li key={item} className="category-item">
@@ -195,6 +261,110 @@ function App() {
               </li>
             ))}
           </ul>
+        )}
+
+        {!loading && !error && selectedMineral && (
+          <section className="mineral-details">
+            <h3>{selectedMineral.mineralName}</h3>
+            <div className="detail-grid">
+              <div className="detail-item">
+                <span className="detail-label">ID</span>
+                <span className="detail-value">
+                  {selectedMineral.mineralId}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Хімічна формула</span>
+                <span className="detail-value">
+                  {selectedMineral.chemicalFormula || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Блиск</span>
+                <span className="detail-value">
+                  {selectedMineral.luster || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Колір</span>
+                <span className="detail-value">
+                  {selectedMineral.color || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Риса</span>
+                <span className="detail-value">
+                  {selectedMineral.streak || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Прозорість</span>
+                <span className="detail-value">
+                  {selectedMineral.transparency || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Твердість (Mohs)</span>
+                <span className="detail-value">
+                  {selectedMineral.hardnessMohs ?? "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Спайність</span>
+                <span className="detail-value">
+                  {selectedMineral.cleavage || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Злам</span>
+                <span className="detail-value">
+                  {selectedMineral.fracture || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Ковкість</span>
+                <span className="detail-value">
+                  {selectedMineral.tenacity || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Питома вага</span>
+                <span className="detail-value">
+                  {selectedMineral.specificGravity ?? "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Магнетизм</span>
+                <span className="detail-value">
+                  {selectedMineral.magnetism ? "Так" : "Ні"}
+                </span>
+              </div>
+              <div className="detail-item detail-item-wide">
+                <span className="detail-label">Морфологія</span>
+                <span className="detail-value">
+                  {selectedMineral.morphology || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item detail-item-wide">
+                <span className="detail-label">Парагенезис</span>
+                <span className="detail-value">
+                  {selectedMineral.paragenesis || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item detail-item-wide">
+                <span className="detail-label">Особливі властивості</span>
+                <span className="detail-value">
+                  {selectedMineral.specialProperties || "Немає даних"}
+                </span>
+              </div>
+              <div className="detail-item detail-item-wide">
+                <span className="detail-label">Нотатки</span>
+                <span className="detail-value">
+                  {selectedMineral.notes || "Немає даних"}
+                </span>
+              </div>
+            </div>
+          </section>
         )}
       </section>
     </main>

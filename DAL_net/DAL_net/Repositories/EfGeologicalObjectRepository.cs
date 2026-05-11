@@ -167,6 +167,60 @@ public class EfGeologicalObjectRepository : IGeologicalObjectRepository
         };
     }
 
+    public async Task<MineralCharacteristic?> GetMineralCharacteristicAsync(
+        int? mineralId,
+        string? mineralName,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Minerals
+            .AsNoTracking()
+            .Include(x => x.Characteristic)
+            .AsQueryable();
+
+        MineralEntity? mineral = null;
+
+        if (mineralId.HasValue)
+        {
+            mineral = await query.FirstOrDefaultAsync(x => x.Id == mineralId.Value, cancellationToken);
+        }
+
+        if (mineral is null && !string.IsNullOrWhiteSpace(mineralName))
+        {
+            var normalizedName = mineralName.Trim();
+            mineral = await query.FirstOrDefaultAsync(x =>
+                EF.Functions.ILike(x.Name, normalizedName),
+                cancellationToken);
+        }
+
+        if (mineral is null)
+        {
+            return null;
+        }
+
+        var characteristic = mineral.Characteristic;
+
+        return new MineralCharacteristic
+        {
+            MineralId = mineral.Id,
+            MineralName = mineral.Name,
+            ChemicalFormula = mineral.ChemicalFormula,
+            Luster = characteristic?.Luster,
+            Color = characteristic?.Color,
+            Streak = characteristic?.Streak,
+            Transparency = characteristic?.Transparency,
+            HardnessMohs = characteristic?.HardnessMohs,
+            Cleavage = characteristic?.Cleavage,
+            Fracture = characteristic?.Fracture,
+            Tenacity = characteristic?.Tenacity,
+            SpecificGravity = characteristic?.SpecificGravity,
+            Magnetism = characteristic?.Magnetism ?? false,
+            Morphology = characteristic?.Morphology,
+            Paragenesis = characteristic?.Paragenesis,
+            SpecialProperties = characteristic?.SpecialProperties,
+            Notes = characteristic?.Notes
+        };
+    }
+
     private static async Task<IReadOnlyList<string>> GetTopLevelChildrenAsync(
         NpgsqlConnection connection,
         string topLevelName,

@@ -66,5 +66,10 @@ public class GeologicalObjectServiceTests
         {
             return Task.FromResult<IReadOnlyList<string>>([]);
         }
+
+        public Task<MineralCharacteristic?> GetMineralCharacteristicAsync(int? mineralId, string? mineralName, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<MineralCharacteristic?>(null);
+        }
     }
 }

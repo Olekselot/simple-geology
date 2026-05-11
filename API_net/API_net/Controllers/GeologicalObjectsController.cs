@@ -64,6 +64,26 @@ public class GeologicalObjectsController : ControllerBase
         return Ok(items);
     }
 
+    [HttpGet("minerals/characteristics")]
+    public async Task<ActionResult<MineralCharacteristicDto>> GetMineralCharacteristics(
+        [FromQuery] int? mineralId,
+        [FromQuery] string? mineralName,
+        CancellationToken cancellationToken)
+    {
+        if (!mineralId.HasValue && string.IsNullOrWhiteSpace(mineralName))
+        {
+            return BadRequest(new { error = "Provide mineralId or mineralName" });
+        }
+
+        var characteristic = await _service.GetMineralCharacteristicAsync(mineralId, mineralName, cancellationToken);
+        if (characteristic is null)
+        {
+            return NotFound(new { error = "Mineral was not found" });
+        }
+
+        return Ok(ToDto(characteristic));
+    }
+
     [HttpGet("{id:int}")]
     public async Task<ActionResult<GeologicalObjectDto>> GetById(int id, CancellationToken cancellationToken)
     {
@@ -99,5 +119,27 @@ public class GeologicalObjectsController : ControllerBase
     private static GeologicalObjectDto ToDto(GeologicalObject item)
     {
         return new GeologicalObjectDto(item.Id, item.Name, item.Type, item.DepthMeters, item.Description);
+    }
+
+    private static MineralCharacteristicDto ToDto(MineralCharacteristic item)
+    {
+        return new MineralCharacteristicDto(
+            item.MineralId,
+            item.MineralName,
+            item.ChemicalFormula,
+            item.Luster,
+            item.Color,
+            item.Streak,
+            item.Transparency,
+            item.HardnessMohs,
+            item.Cleavage,
+            item.Fracture,
+            item.Tenacity,
+            item.SpecificGravity,
+            item.Magnetism,
+            item.Morphology,
+            item.Paragenesis,
+            item.SpecialProperties,
+            item.Notes);
     }
 }

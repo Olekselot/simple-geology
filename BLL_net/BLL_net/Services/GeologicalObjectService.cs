@@ -67,4 +67,12 @@ public class GeologicalObjectService : IGeologicalObjectService
     {
         return _repository.GetChildrenLevelClassNamesAsync(currentLevel, selectedName, cancellationToken);
     }
+
+    public Task<MineralCharacteristic?> GetMineralCharacteristicAsync(
+        int? mineralId,
+        string? mineralName,
+        CancellationToken cancellationToken = default)
+    {
+        return _repository.GetMineralCharacteristicAsync(mineralId, mineralName, cancellationToken);
+    }
 }
