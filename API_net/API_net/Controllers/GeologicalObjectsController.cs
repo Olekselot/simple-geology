@@ -44,7 +44,7 @@ public class GeologicalObjectsController : ControllerBase
         }
     }
 
-    [HttpGet("classes/children")]
+    [HttpGet("classes/second-level")]
     public async Task<ActionResult<IEnumerable<string>>> GetChildClasses(
         [FromQuery] string topLevelName,
         CancellationToken cancellationToken)
