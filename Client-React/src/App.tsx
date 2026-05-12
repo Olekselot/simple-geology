@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import BubbleAmbientAnimation from "./BubbleAmbientAnimation";
+import BubbleButtonGrid, { type BubbleGridEntry } from "./BubbleButtonGrid";
 
 const API_URL =
   import.meta.env.VITE_API_BASE ??
@@ -120,20 +122,6 @@ const getErrorText = async (response: Response, fallback: string) => {
   return fallback;
 };
 
-const getLevelLabel = (level: string): string => {
-  const labels: Record<string, string> = {
-    "top-level": "Верхні категорії",
-    "rock-type": "Типи гірських порід",
-    "rock-subtype": "Підтипи гірських порід",
-    rock: "Гірські породи",
-    "silicate-structure": "Силікатні структури",
-    "mineral-class": "Класи мінералів",
-    mineral: "Мінерали",
-    "mineral-details": "Характеристики мінералу",
-  };
-  return labels[level] || level;
-};
-
 function App() {
   const [items, setItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,14 +135,11 @@ function App() {
     null,
   );
   const [searchLoading, setSearchLoading] = useState(false);
-  const [filterMode, setFilterMode] = useState(false);
-  const [mineralFilters, setMineralFilters] = useState<MineralFilterState>(
-    EMPTY_MINERAL_FILTERS,
-  );
+  const [filterMode] = useState(false);
+  const [mineralFilters] = useState<MineralFilterState>(EMPTY_MINERAL_FILTERS);
   const [mineralSearchResults, setMineralSearchResults] = useState<
     MineralSearchResultDto[] | null
   >(null);
-
   const loadItems = async (level: string, selectedName?: string) => {
     setLoading(true);
     setError(null);
@@ -447,30 +432,6 @@ function App() {
     void loadMineralCharacteristicsById(result.mineralId);
   };
 
-  const toggleFilterMode = () => {
-    setFilterMode((prev) => {
-      const next = !prev;
-      setSearchResults(null);
-      setMineralSearchResults(null);
-      if (!next) {
-        setMineralFilters(EMPTY_MINERAL_FILTERS);
-      }
-      return next;
-    });
-  };
-
-  const updateMineralFilter = (
-    key: keyof MineralFilterState,
-    value: string,
-  ) => {
-    setMineralFilters((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const clearMineralFilters = () => {
-    setMineralFilters(EMPTY_MINERAL_FILTERS);
-    setMineralSearchResults(null);
-  };
-
   const handleBack = () => {
     if (navigationPath.length === 0) return;
 
@@ -500,68 +461,62 @@ function App() {
     void loadItems("top-level");
   }, []);
 
-  const breadcrumbPath = [
-    { level: "top-level", label: "Начало" },
-    ...navigationPath,
-  ];
+  const navigationEntries: BubbleGridEntry[] = items.map((item) => ({
+    key: item,
+    label: item,
+    onClick: () => handleItemClick(item),
+  }));
+
+  const searchEntries: BubbleGridEntry[] =
+    searchResults?.map((result, idx) => ({
+      key: `${result.entityType}-${result.name}-${idx}`,
+      label: result.name,
+      badge: result.entityTypeLabel,
+      onClick: () => handleSearchResultClick(result),
+    })) ?? [];
+
+  const mineralFilterEntries: BubbleGridEntry[] =
+    mineralSearchResults?.map((result) => ({
+      key: `${result.mineralId}`,
+      label: result.mineralName,
+      badge: "Мінерал",
+      meta: [
+        result.mineralClass || "Без класу",
+        result.chemicalFormula,
+        result.hardnessMohs !== null ? `Mohs ${result.hardnessMohs}` : null,
+        result.magnetism ? "Магнітний" : null,
+      ]
+        .filter(Boolean)
+        .join(" • "),
+      onClick: () => handleMineralFilterResultClick(result),
+    })) ?? [];
+
+  const backAction =
+    navigationPath.length > 0
+      ? {
+          label: "← Назад",
+          onClick: handleBack,
+          variant: "back" as const,
+        }
+      : undefined;
+
+  const hasVisibleButtons =
+    selectedMineral !== null ||
+    items.length > 0 ||
+    (searchResults !== null && searchResults.length > 0) ||
+    (mineralSearchResults !== null && mineralSearchResults.length > 0) ||
+    backAction !== undefined;
 
   return (
     <main className="page">
-      <header className="header">
-        <h1>Simple Geology</h1>
-        <p>Интерактивный справочник геологических объектов</p>
-      </header>
-
+      <BubbleAmbientAnimation visible={hasVisibleButtons} />
       <section className="card">
-        <div className="navigation-header">
-          <div className="breadcrumb">
-            {breadcrumbPath.map((step, index) => (
-              <div key={index} className="breadcrumb-item">
-                {index > 0 && <span className="breadcrumb-separator">→</span>}
-                <span className="breadcrumb-text">{step.label}</span>
-              </div>
-            ))}
-          </div>
-
-          {navigationPath.length > 0 && (
-            <button className="back-button" onClick={handleBack}>
-              ← Назад
-            </button>
-          )}
-        </div>
-
-        <h2>{getLevelLabel(currentLevel)}</h2>
-
         {!selectedMineral && (
           <div className="search-box">
-            <div className="search-mode-row">
-              <label className="search-mode-toggle">
-                <input
-                  type="checkbox"
-                  checked={filterMode}
-                  onChange={toggleFilterMode}
-                />
-                <span>Режим фільтрів мінералів</span>
-              </label>
-              {filterMode && (
-                <button
-                  type="button"
-                  className="filters-reset-button"
-                  onClick={clearMineralFilters}
-                >
-                  Скинути фільтри
-                </button>
-              )}
-            </div>
-
             <input
               type="text"
               className="search-input"
-              placeholder={
-                filterMode
-                  ? "Пошук мінералу за назвою (без фільтрів: від 3 символів)..."
-                  : "Пошук за назвою (від 3 символів)..."
-              }
+              placeholder="Пошук за назвою (від 3 символів)..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -573,209 +528,6 @@ function App() {
                   Введіть ще {3 - searchQuery.length} символ(и)
                 </span>
               )}
-
-            {filterMode && (
-              <div className="filters-grid">
-                <input
-                  className="filter-input"
-                  placeholder="Хімічна формула"
-                  value={mineralFilters.chemicalFormula}
-                  onChange={(e) =>
-                    updateMineralFilter("chemicalFormula", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Клас мінералу"
-                  value={mineralFilters.mineralClass}
-                  onChange={(e) =>
-                    updateMineralFilter("mineralClass", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Силікатна структура"
-                  value={mineralFilters.silicateStructure}
-                  onChange={(e) =>
-                    updateMineralFilter("silicateStructure", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Блиск"
-                  value={mineralFilters.luster}
-                  onChange={(e) =>
-                    updateMineralFilter("luster", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Колір"
-                  value={mineralFilters.color}
-                  onChange={(e) => updateMineralFilter("color", e.target.value)}
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Риса"
-                  value={mineralFilters.streak}
-                  onChange={(e) =>
-                    updateMineralFilter("streak", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Прозорість"
-                  value={mineralFilters.transparency}
-                  onChange={(e) =>
-                    updateMineralFilter("transparency", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Спайність"
-                  value={mineralFilters.cleavage}
-                  onChange={(e) =>
-                    updateMineralFilter("cleavage", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Злам"
-                  value={mineralFilters.fracture}
-                  onChange={(e) =>
-                    updateMineralFilter("fracture", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Ковкість"
-                  value={mineralFilters.tenacity}
-                  onChange={(e) =>
-                    updateMineralFilter("tenacity", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Морфологія"
-                  value={mineralFilters.morphology}
-                  onChange={(e) =>
-                    updateMineralFilter("morphology", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Парагенезис"
-                  value={mineralFilters.paragenesis}
-                  onChange={(e) =>
-                    updateMineralFilter("paragenesis", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Особливі властивості"
-                  value={mineralFilters.specialProperties}
-                  onChange={(e) =>
-                    updateMineralFilter("specialProperties", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Нотатки"
-                  value={mineralFilters.notes}
-                  onChange={(e) => updateMineralFilter("notes", e.target.value)}
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Опис"
-                  value={mineralFilters.description}
-                  onChange={(e) =>
-                    updateMineralFilter("description", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Застосування"
-                  value={mineralFilters.commonUse}
-                  onChange={(e) =>
-                    updateMineralFilter("commonUse", e.target.value)
-                  }
-                />
-
-                <input
-                  className="filter-input"
-                  placeholder="Твердість Mohs від"
-                  value={mineralFilters.hardnessMin}
-                  onChange={(e) =>
-                    updateMineralFilter("hardnessMin", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Твердість Mohs до"
-                  value={mineralFilters.hardnessMax}
-                  onChange={(e) =>
-                    updateMineralFilter("hardnessMax", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Питома вага від"
-                  value={mineralFilters.specificGravityMin}
-                  onChange={(e) =>
-                    updateMineralFilter("specificGravityMin", e.target.value)
-                  }
-                />
-                <input
-                  className="filter-input"
-                  placeholder="Питома вага до"
-                  value={mineralFilters.specificGravityMax}
-                  onChange={(e) =>
-                    updateMineralFilter("specificGravityMax", e.target.value)
-                  }
-                />
-
-                <select
-                  className="filter-input"
-                  value={mineralFilters.magnetism}
-                  onChange={(e) =>
-                    updateMineralFilter("magnetism", e.target.value)
-                  }
-                >
-                  <option value="any">Магнетизм: будь-який</option>
-                  <option value="true">Магнетизм: так</option>
-                  <option value="false">Магнетизм: ні</option>
-                </select>
-                <select
-                  className="filter-input"
-                  value={mineralFilters.hasSilicateStructure}
-                  onChange={(e) =>
-                    updateMineralFilter("hasSilicateStructure", e.target.value)
-                  }
-                >
-                  <option value="any">Силікатна структура: будь-яка</option>
-                  <option value="true">Силікатна структура: є</option>
-                  <option value="false">Силікатна структура: немає</option>
-                </select>
-                <select
-                  className="filter-input"
-                  value={mineralFilters.hasCharacteristics}
-                  onChange={(e) =>
-                    updateMineralFilter("hasCharacteristics", e.target.value)
-                  }
-                >
-                  <option value="any">Характеристики: будь-які</option>
-                  <option value="true">Характеристики: є</option>
-                  <option value="false">Характеристики: немає</option>
-                </select>
-              </div>
-            )}
-
-            {filterMode && (
-              <span className="search-hint">
-                Фільтри шукають тільки мінерали по всій БД, незалежно від
-                поточної категорії.
-              </span>
-            )}
           </div>
         )}
 
@@ -795,21 +547,10 @@ function App() {
                 Нічого не знайдено за запитом "{searchQuery}".
               </p>
             ) : (
-              <ul className="category-list">
-                {searchResults.map((result, idx) => (
-                  <li key={idx} className="category-item">
-                    <button
-                      className="category-button"
-                      onClick={() => handleSearchResultClick(result)}
-                    >
-                      <span className="category-name">{result.name}</span>
-                      <span className="search-result-type">
-                        {result.entityTypeLabel}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <BubbleButtonGrid
+                entries={searchEntries}
+                trailingAction={backAction}
+              />
             )}
           </>
         )}
@@ -821,33 +562,10 @@ function App() {
                 Нічого не знайдено за вказаними фільтрами.
               </p>
             ) : (
-              <ul className="category-list">
-                {mineralSearchResults.map((result) => (
-                  <li key={result.mineralId} className="category-item">
-                    <button
-                      className="category-button"
-                      onClick={() => handleMineralFilterResultClick(result)}
-                    >
-                      <div className="filter-result-main">
-                        <span className="category-name">
-                          {result.mineralName}
-                        </span>
-                        <span className="search-result-type">Мінерал</span>
-                      </div>
-                      <span className="filter-result-meta">
-                        {result.mineralClass || "Без класу"}
-                        {result.chemicalFormula
-                          ? ` • ${result.chemicalFormula}`
-                          : ""}
-                        {result.hardnessMohs !== null
-                          ? ` • Mohs ${result.hardnessMohs}`
-                          : ""}
-                        {result.magnetism ? " • Магнітний" : ""}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <BubbleButtonGrid
+                entries={mineralFilterEntries}
+                trailingAction={backAction}
+              />
             )}
           </>
         )}
@@ -858,122 +576,116 @@ function App() {
           searchResults === null &&
           mineralSearchResults === null &&
           items.length > 0 && (
-            <ul className="category-list">
-              {items.map((item) => (
-                <li key={item} className="category-item">
-                  <button
-                    className="category-button"
-                    onClick={() => handleItemClick(item)}
-                  >
-                    <span className="category-name">{item}</span>
-                    <span className="category-arrow">→</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <BubbleButtonGrid
+              entries={navigationEntries}
+              trailingAction={backAction}
+            />
           )}
 
         {!loading && !error && selectedMineral && (
-          <section className="mineral-details">
-            <h3>{selectedMineral.mineralName}</h3>
-            <div className="detail-grid">
-              <div className="detail-item">
-                <span className="detail-label">ID</span>
-                <span className="detail-value">
-                  {selectedMineral.mineralId}
-                </span>
+          <section className="mineral-details-shell">
+            <BubbleButtonGrid entries={[]} trailingAction={backAction} />
+            <section className="mineral-details">
+              <h3>{selectedMineral.mineralName}</h3>
+              <div className="detail-grid">
+                <div className="detail-item">
+                  <span className="detail-label">ID</span>
+                  <span className="detail-value">
+                    {selectedMineral.mineralId}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Хімічна формула</span>
+                  <span className="detail-value">
+                    {selectedMineral.chemicalFormula || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Блиск</span>
+                  <span className="detail-value">
+                    {selectedMineral.luster || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Колір</span>
+                  <span className="detail-value">
+                    {selectedMineral.color || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Риса</span>
+                  <span className="detail-value">
+                    {selectedMineral.streak || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Прозорість</span>
+                  <span className="detail-value">
+                    {selectedMineral.transparency || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Твердість (Mohs)</span>
+                  <span className="detail-value">
+                    {selectedMineral.hardnessMohs ?? "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Спайність</span>
+                  <span className="detail-value">
+                    {selectedMineral.cleavage || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Злам</span>
+                  <span className="detail-value">
+                    {selectedMineral.fracture || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Ковкість</span>
+                  <span className="detail-value">
+                    {selectedMineral.tenacity || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Питома вага</span>
+                  <span className="detail-value">
+                    {selectedMineral.specificGravity ?? "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Магнетизм</span>
+                  <span className="detail-value">
+                    {selectedMineral.magnetism ? "Так" : "Ні"}
+                  </span>
+                </div>
+                <div className="detail-item detail-item-wide">
+                  <span className="detail-label">Морфологія</span>
+                  <span className="detail-value">
+                    {selectedMineral.morphology || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item detail-item-wide">
+                  <span className="detail-label">Парагенезис</span>
+                  <span className="detail-value">
+                    {selectedMineral.paragenesis || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item detail-item-wide">
+                  <span className="detail-label">Особливі властивості</span>
+                  <span className="detail-value">
+                    {selectedMineral.specialProperties || "Немає даних"}
+                  </span>
+                </div>
+                <div className="detail-item detail-item-wide">
+                  <span className="detail-label">Нотатки</span>
+                  <span className="detail-value">
+                    {selectedMineral.notes || "Немає даних"}
+                  </span>
+                </div>
               </div>
-              <div className="detail-item">
-                <span className="detail-label">Хімічна формула</span>
-                <span className="detail-value">
-                  {selectedMineral.chemicalFormula || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Блиск</span>
-                <span className="detail-value">
-                  {selectedMineral.luster || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Колір</span>
-                <span className="detail-value">
-                  {selectedMineral.color || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Риса</span>
-                <span className="detail-value">
-                  {selectedMineral.streak || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Прозорість</span>
-                <span className="detail-value">
-                  {selectedMineral.transparency || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Твердість (Mohs)</span>
-                <span className="detail-value">
-                  {selectedMineral.hardnessMohs ?? "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Спайність</span>
-                <span className="detail-value">
-                  {selectedMineral.cleavage || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Злам</span>
-                <span className="detail-value">
-                  {selectedMineral.fracture || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Ковкість</span>
-                <span className="detail-value">
-                  {selectedMineral.tenacity || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Питома вага</span>
-                <span className="detail-value">
-                  {selectedMineral.specificGravity ?? "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item">
-                <span className="detail-label">Магнетизм</span>
-                <span className="detail-value">
-                  {selectedMineral.magnetism ? "Так" : "Ні"}
-                </span>
-              </div>
-              <div className="detail-item detail-item-wide">
-                <span className="detail-label">Морфологія</span>
-                <span className="detail-value">
-                  {selectedMineral.morphology || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item detail-item-wide">
-                <span className="detail-label">Парагенезис</span>
-                <span className="detail-value">
-                  {selectedMineral.paragenesis || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item detail-item-wide">
-                <span className="detail-label">Особливі властивості</span>
-                <span className="detail-value">
-                  {selectedMineral.specialProperties || "Немає даних"}
-                </span>
-              </div>
-              <div className="detail-item detail-item-wide">
-                <span className="detail-label">Нотатки</span>
-                <span className="detail-value">
-                  {selectedMineral.notes || "Немає даних"}
-                </span>
-              </div>
-            </div>
+            </section>
           </section>
         )}
       </section>

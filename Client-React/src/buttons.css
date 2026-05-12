@@ -1,0 +1,220 @@
+/* Reusable button styles */
+
+.mineral-class-list {
+  --bubble-columns: 8;
+  --bubble-main-size: 132px;
+  width: min(100%, 920px);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(var(--bubble-columns), minmax(0, 1fr));
+  justify-items: center;
+  align-items: start;
+  row-gap: clamp(10px, 2vw, 16px);
+  column-gap: clamp(8px, 1.6vw, 14px);
+  margin: 8px auto 16px;
+  padding: 8px calc(var(--bubble-main-size) * 0.25) 16px;
+  overflow-x: clip;
+  overflow-y: visible;
+  border-radius: 28px;
+}
+
+.mineral-class-item {
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  grid-row: var(--bubble-grid-row);
+  grid-column: var(--bubble-grid-start) / span 2;
+}
+
+.mineral-class-item--offset {
+  /* Offset is achieved by grid start positions in App.tsx. */
+}
+
+.btn-bubble {
+  --bubble-color: var(--color-secondary);
+  --bubble-color-hover: color-mix(in srgb, var(--color-secondary) 72%, var(--color-white));
+
+  position: relative;
+  width: var(--bubble-main-size);
+  height: var(--bubble-main-size);
+  border: none;
+  border-radius: 999px;
+  background: var(--bubble-color);
+  color: var(--color-black);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.12;
+  text-align: center;
+  padding: 20px;
+  cursor: pointer;
+  transition: transform 0.28s ease, background-color 0.24s ease, box-shadow 0.24s ease;
+  box-shadow: 0 10px 26px rgba(0, 52, 0, 0.2);
+  overflow: visible;
+}
+
+.btn-bubble--back {
+  --bubble-color: var(--color-accent);
+  --bubble-color-hover: color-mix(in srgb, var(--color-accent) 76%, var(--color-white));
+}
+
+.btn-bubble__label {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.btn-bubble__content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.btn-bubble__badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: color-mix(in srgb, var(--color-white) 72%, transparent);
+  color: var(--color-black);
+  max-width: 100%;
+}
+
+.btn-bubble__meta {
+  font-size: 11px;
+  line-height: 1.25;
+  color: color-mix(in srgb, var(--color-black) 78%, var(--color-white));
+  max-width: 100%;
+}
+
+.center-burst {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+.center-burst--hidden {
+  opacity: 0;
+}
+
+.center-burst--visible {
+  opacity: 1;
+}
+
+.center-burst__dot {
+  --burst-dot-size: 10px;
+  --burst-dot-x: 0px;
+  --burst-dot-y: 0px;
+
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+  width: var(--burst-dot-size);
+  height: var(--burst-dot-size);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-secondary) 65%, var(--color-white));
+  box-shadow: 0 2px 8px rgba(0, 52, 0, 0.15);
+  opacity: 0;
+  transform: translate(-50%, -50%) translate(0, 0) scale(0.3);
+  animation-name: center-burst-drift;
+  animation-duration: 4.6s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.btn-bubble:hover {
+  background: var(--bubble-color-hover);
+  transform: scale(1.055);
+  box-shadow: 0 14px 34px rgba(0, 52, 0, 0.24);
+}
+
+.btn-bubble:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-accent) 55%, var(--color-white));
+  outline-offset: 3px;
+}
+
+@keyframes center-burst-drift {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.2);
+  }
+
+  20% {
+    opacity: 0.48;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%)
+      translate(var(--burst-dot-x), var(--burst-dot-y)) scale(1.05);
+  }
+}
+
+@media (max-width: 1199px) {
+  .btn-bubble {
+    font-size: 15px;
+    padding: 16px;
+  }
+
+  .btn-bubble__meta {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 767px) {
+  .btn-bubble {
+    font-size: 13px;
+    padding: 12px;
+  }
+
+  .btn-bubble__badge {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+
+  .btn-bubble__meta {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 560px) {
+  .mineral-class-list {
+    column-gap: clamp(4px, 1.2vw, 8px);
+    padding: 6px calc(var(--bubble-main-size) * 0.12) 12px;
+  }
+
+  .btn-bubble {
+    font-size: 12px;
+    padding: 10px;
+  }
+
+  .btn-bubble__badge {
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+
+  .btn-bubble__meta {
+    font-size: 8px;
+  }
+}

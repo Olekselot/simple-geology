@@ -1,0 +1,31 @@
+/* ============================================================
+   Design Tokens — Single source of truth for all visual values
+   ============================================================ */
+
+:root {
+  /* --- Core Palette --- */
+  --color-primary:    #e3d095; /* warm sand / gold */
+  --color-secondary:  #9ec590; /* soft sage green */
+  --color-accent:     #fda400; /* amber / orange */
+  --color-highlight:  #008001; /* deep forest green */
+
+  --color-white: #fcfff1; /* warm off-white */
+  --color-black: #003400; /* very dark green-black */
+
+  /* --- Semantic aliases (use these in components) --- */
+  --color-bg:            var(--color-white);
+  --color-bg-surface:    color-mix(in srgb, var(--color-white) 80%, var(--color-secondary));
+  --color-bg-muted:      color-mix(in srgb, var(--color-primary) 30%, var(--color-white));
+
+  --color-text:          var(--color-black);
+  --color-text-muted:    color-mix(in srgb, var(--color-black) 60%, var(--color-white));
+  --color-text-on-dark:  var(--color-white);
+
+  --color-border:        color-mix(in srgb, var(--color-primary) 60%, var(--color-black));
+
+  --color-interactive:        var(--color-accent);
+  --color-interactive-hover:  color-mix(in srgb, var(--color-accent) 80%, var(--color-black));
+
+  --color-success: var(--color-highlight);
+  --color-warning: var(--color-accent);
+}
