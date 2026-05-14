@@ -1,4 +1,10 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 export type BubbleGridEntry = {
   key: string;
@@ -100,9 +106,15 @@ export default function BubbleButtonGrid({
   pattern = [3, 4],
   trailingAction,
 }: BubbleButtonGridProps) {
+  const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map());
+  const previousRects = useRef<Map<string, DOMRect>>(new Map());
+  const previousKeysRef = useRef<Set<string>>(new Set());
+  const exitingItemsRef = useRef<Set<string>>(new Set());
+
   const [viewportWidth, setViewportWidth] = useState<number>(
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
+  const [exitingItems, setExitingItems] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const onResize = () => {
@@ -130,6 +142,97 @@ export default function BubbleButtonGrid({
   const maxPattern = Math.max(...pattern);
   const bubbleMainSize = getBubbleMainSize(viewportWidth, renderedItems.length);
 
+  useLayoutEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const currentKeys = new Set(renderedItems.map((item) => item.key));
+    const removed = Array.from(previousKeysRef.current).filter(
+      (key) => !currentKeys.has(key),
+    );
+
+    if (removed.length > 0) {
+      setExitingItems(new Set(removed));
+      exitingItemsRef.current = new Set(removed);
+      removed.forEach((key) => {
+        const element = itemRefs.current.get(key);
+        if (element) {
+          element.dataset.state = "exit";
+          setTimeout(() => {
+            element.remove();
+            itemRefs.current.delete(key);
+            previousRects.current.delete(key);
+          }, 420);
+        }
+      });
+    }
+
+    previousKeysRef.current = currentKeys;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const nextRects = new Map<string, DOMRect>();
+
+    renderedItems.forEach((item) => {
+      const element = itemRefs.current.get(item.key);
+      if (!element) {
+        return;
+      }
+
+      if (exitingItemsRef.current.has(item.key)) {
+        return;
+      }
+
+      nextRects.set(item.key, element.getBoundingClientRect());
+    });
+
+    renderedItems.forEach((item) => {
+      const element = itemRefs.current.get(item.key);
+      const previousRect = previousRects.current.get(item.key);
+      const nextRect = nextRects.get(item.key);
+
+      if (
+        !element ||
+        !nextRect ||
+        prefersReducedMotion ||
+        exitingItemsRef.current.has(item.key)
+      ) {
+        return;
+      }
+
+      const isNew = !previousRect;
+
+      if (isNew) {
+        element.dataset.state = "enter";
+        element.style.animation =
+          "bubble-item-enter 0.52s cubic-bezier(0.13, 0.92, 0.6, 1)";
+        return;
+      }
+
+      const deltaX = previousRect.left - nextRect.left;
+      const deltaY = previousRect.top - nextRect.top;
+
+      if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) {
+        return;
+      }
+
+      element.animate(
+        [
+          { transform: `translate(${deltaX}px, ${deltaY}px)` },
+          { transform: "translate(0px, 0px)" },
+        ],
+        {
+          duration: 680,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      );
+    });
+
+    previousRects.current = nextRects;
+  }, [renderedItems, viewportWidth, bubbleMainSize]);
+
   return (
     <ul
       className="category-list mineral-class-list"
@@ -150,11 +253,20 @@ export default function BubbleButtonGrid({
           minPattern,
         );
         const isOffsetRow = colsInThisRow === maxPattern;
+        const isExiting = exitingItems.has(item.key);
 
         return (
           <li
             key={item.key}
-            className={`category-item mineral-class-item ${isOffsetRow ? "mineral-class-item--offset" : ""}`}
+            className={`category-item mineral-class-item ${isOffsetRow ? "mineral-class-item--offset" : ""}${isExiting ? " mineral-class-item--exit" : ""}`}
+            ref={(node) => {
+              if (node) {
+                itemRefs.current.set(item.key, node);
+              } else {
+                itemRefs.current.delete(item.key);
+                previousRects.current.delete(item.key);
+              }
+            }}
             style={
               {
                 "--bubble-grid-row": rowIndex + 1,

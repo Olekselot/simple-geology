@@ -54,7 +54,7 @@ const buildCenterDots = (
       x: Math.round(cos * distance),
       y: Math.round(sin * distance),
       delay: (index / dotCount) * 1.4,
-      duration: 4 + (index % 5) * 0.18,
+      duration: 6.4 + (index % 5) * 0.28,
     };
   });
 };

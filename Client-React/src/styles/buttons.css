@@ -37,6 +37,51 @@
   /* Offset is achieved by grid start positions in App.tsx. */
 }
 
+.mineral-class-item--exit {
+  animation: bubble-item-exit 0.42s cubic-bezier(0.6, 0, 0.88, 0.1) forwards;
+}
+
+@keyframes bubble-item-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+@keyframes bubble-item-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mineral-class-item--exit {
+    animation: none;
+    opacity: 0;
+    display: none;
+  }
+
+  @keyframes bubble-item-enter {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
 .btn-bubble {
   --bubble-color: var(--color-secondary);
   --bubble-color-hover: color-mix(in srgb, var(--color-secondary) 72%, var(--color-white));
@@ -54,7 +99,7 @@
   text-align: center;
   padding: 20px;
   cursor: pointer;
-  transition: transform 0.28s ease, background-color 0.24s ease, box-shadow 0.24s ease;
+  transition: transform 0.44s ease, background-color 0.38s ease, box-shadow 0.38s ease;
   box-shadow: 0 10px 26px rgba(0, 52, 0, 0.2);
   overflow: visible;
 }
@@ -110,7 +155,7 @@
   pointer-events: none;
   z-index: -1;
   opacity: 1;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.56s ease;
 }
 
 .center-burst--hidden {
@@ -138,7 +183,7 @@
   opacity: 0;
   transform: translate(-50%, -50%) translate(0, 0) scale(0.3);
   animation-name: center-burst-drift;
-  animation-duration: 4.6s;
+  animation-duration: 7.2s;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
 }

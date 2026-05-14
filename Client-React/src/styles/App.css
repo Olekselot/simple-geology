@@ -97,7 +97,7 @@
   font-weight: 500;
   color: var(--color-black);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.32s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -125,7 +125,7 @@
   color: var(--color-secondary);
   margin-left: 12px;
   font-size: 18px;
-  transition: transform 0.2s ease;
+  transition: transform 0.32s ease;
 }
 
 .category-button:hover .category-arrow {
@@ -202,6 +202,46 @@
   gap: 6px;
 }
 
+.filter-panel-dropdown {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scaleY(0.98);
+  transform-origin: top;
+  pointer-events: none;
+  margin-top: 0;
+  transition:
+    max-height 0.48s ease,
+    opacity 0.36s ease,
+    transform 0.36s ease,
+    margin-top 0.36s ease,
+    visibility 0s linear 0.48s;
+}
+
+.filter-panel-dropdown.open {
+  max-height: 1300px;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scaleY(1);
+  pointer-events: auto;
+  margin-top: 4px;
+  transition:
+    max-height 0.56s ease,
+    opacity 0.4s ease,
+    transform 0.4s ease,
+    margin-top 0.4s ease,
+    visibility 0s linear 0s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-panel-dropdown,
+  .filter-panel-dropdown.open {
+    transition: none;
+    transform: none;
+  }
+}
+
 .search-mode-row {
   display: flex;
   justify-content: space-between;
@@ -228,7 +268,7 @@
   font-weight: 600;
   padding: 6px 10px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.32s ease;
 }
 
 .filters-reset-button:hover {
@@ -266,10 +306,10 @@
   border: 2px solid var(--color-border);
   border-radius: 10px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.32s ease, box-shadow 0.32s ease;
   box-sizing: border-box;
   color: var(--color-black);
-  background: var(--color-white);
+  background: color-mix(in srgb, var(--color-white) 65%, transparent);
 }
 
 .search-input:focus {

@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import "./App.css";
+import "../styles/App.css";
 import BubbleAmbientAnimation from "./BubbleAmbientAnimation";
 import BubbleButtonGrid, { type BubbleGridEntry } from "./BubbleButtonGrid";
+import SearchBar from "./SearchBar";
+import FilterPanel, {
+  type MineralFilterState,
+  EMPTY_MINERAL_FILTERS,
+} from "./FilterPanel";
 
 const API_URL =
   import.meta.env.VITE_API_BASE ??
@@ -52,58 +57,6 @@ interface MineralSearchResultDto {
   magnetism: boolean;
 }
 
-interface MineralFilterState {
-  chemicalFormula: string;
-  mineralClass: string;
-  silicateStructure: string;
-  luster: string;
-  color: string;
-  streak: string;
-  transparency: string;
-  cleavage: string;
-  fracture: string;
-  tenacity: string;
-  morphology: string;
-  paragenesis: string;
-  specialProperties: string;
-  notes: string;
-  description: string;
-  commonUse: string;
-  hardnessMin: string;
-  hardnessMax: string;
-  specificGravityMin: string;
-  specificGravityMax: string;
-  magnetism: "any" | "true" | "false";
-  hasSilicateStructure: "any" | "true" | "false";
-  hasCharacteristics: "any" | "true" | "false";
-}
-
-const EMPTY_MINERAL_FILTERS: MineralFilterState = {
-  chemicalFormula: "",
-  mineralClass: "",
-  silicateStructure: "",
-  luster: "",
-  color: "",
-  streak: "",
-  transparency: "",
-  cleavage: "",
-  fracture: "",
-  tenacity: "",
-  morphology: "",
-  paragenesis: "",
-  specialProperties: "",
-  notes: "",
-  description: "",
-  commonUse: "",
-  hardnessMin: "",
-  hardnessMax: "",
-  specificGravityMin: "",
-  specificGravityMax: "",
-  magnetism: "any",
-  hasSilicateStructure: "any",
-  hasCharacteristics: "any",
-};
-
 const getErrorText = async (response: Response, fallback: string) => {
   try {
     const payload = await response.json();
@@ -135,11 +88,37 @@ function App() {
     null,
   );
   const [searchLoading, setSearchLoading] = useState(false);
-  const [filterMode] = useState(false);
-  const [mineralFilters] = useState<MineralFilterState>(EMPTY_MINERAL_FILTERS);
+  const [filterMode, setFilterMode] = useState(false);
+  const [mineralFilters, setMineralFilters] = useState<MineralFilterState>(
+    EMPTY_MINERAL_FILTERS,
+  );
   const [mineralSearchResults, setMineralSearchResults] = useState<
     MineralSearchResultDto[] | null
   >(null);
+  const [showLoadingMessage, setShowLoadingMessage] = useState(false);
+  const [showSearchLoadingMessage, setShowSearchLoadingMessage] =
+    useState(false);
+
+  // Delay showing loading message by 0.5 second
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setShowLoadingMessage(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoadingMessage(false);
+    }
+  }, [loading]);
+
+  // Delay showing search loading message by 0.5 second
+  useEffect(() => {
+    if (searchLoading) {
+      const timer = setTimeout(() => setShowSearchLoadingMessage(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSearchLoadingMessage(false);
+    }
+  }, [searchLoading]);
+
   const loadItems = async (level: string, selectedName?: string) => {
     setLoading(true);
     setError(null);
@@ -513,12 +492,11 @@ function App() {
       <section className="card">
         {!selectedMineral && (
           <div className="search-box">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Пошук за назвою (від 3 символів)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+            <SearchBar
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              filterActive={filterMode}
+              onFilterToggle={() => setFilterMode((prev) => !prev)}
             />
 
             {!filterMode &&
@@ -528,17 +506,32 @@ function App() {
                   Введіть ще {3 - searchQuery.length} символ(и)
                 </span>
               )}
+
+            <div
+              className={`filter-panel-dropdown${filterMode ? " open" : ""}`}
+              aria-hidden={!filterMode}
+            >
+              <FilterPanel
+                filters={mineralFilters}
+                onChange={setMineralFilters}
+                onReset={() => setMineralFilters(EMPTY_MINERAL_FILTERS)}
+              />
+            </div>
           </div>
         )}
 
-        {loading && <p className="message loading">Завантаження...</p>}
+        {showLoadingMessage && (
+          <p className="message loading">Завантаження...</p>
+        )}
         {error && <p className="error message">{error}</p>}
 
         {!loading && !error && items.length === 0 && (
           <p className="message">Поки що немає даних.</p>
         )}
 
-        {searchLoading && <p className="message loading">Пошук...</p>}
+        {showSearchLoadingMessage && (
+          <p className="message loading">Пошук...</p>
+        )}
 
         {!searchLoading && !filterMode && searchResults !== null && (
           <>
