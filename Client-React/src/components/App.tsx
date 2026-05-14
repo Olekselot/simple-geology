@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import "../styles/App.css";
 import BubbleAmbientAnimation from "./BubbleAmbientAnimation";
 import BubbleButtonGrid, { type BubbleGridEntry } from "./BubbleButtonGrid";
@@ -75,7 +76,64 @@ const getErrorText = async (response: Response, fallback: string) => {
   return fallback;
 };
 
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "h",
+  ґ: "g",
+  д: "d",
+  е: "e",
+  є: "ye",
+  ж: "zh",
+  з: "z",
+  и: "y",
+  і: "i",
+  ї: "yi",
+  й: "y",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "kh",
+  ц: "ts",
+  ч: "ch",
+  ш: "sh",
+  щ: "shch",
+  ь: "",
+  ю: "yu",
+  я: "ya",
+  э: "e",
+  ё: "yo",
+  ъ: "",
+};
+
+const mineralNameToSlug = (name: string) => {
+  const transliterated = name
+    .trim()
+    .toLowerCase()
+    .replace(/[а-яіїєґёэъь]/g, (char) => CYRILLIC_TO_LATIN[char] ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  return transliterated
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+};
+
+const slugToQuery = (slug: string) => slug.replace(/-/g, " ").trim();
+
 function App() {
+  const navigate = useNavigate();
+  const { mineralSlug } = useParams<{ mineralSlug?: string }>();
   const [items, setItems] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,6 +156,18 @@ function App() {
   const [showLoadingMessage, setShowLoadingMessage] = useState(false);
   const [showSearchLoadingMessage, setShowSearchLoadingMessage] =
     useState(false);
+
+  const navigateToMineral = (mineralName: string) => {
+    const slug = mineralNameToSlug(mineralName);
+    if (!slug) {
+      return;
+    }
+
+    const destination = `/${slug}`;
+    if (destination !== `/${mineralSlug ?? ""}`) {
+      navigate(destination);
+    }
+  };
 
   // Delay showing loading message by 0.5 second
   useEffect(() => {
@@ -202,6 +272,7 @@ function App() {
       const data: MineralCharacteristic = await response.json();
       setSelectedMineral(data);
       setCurrentLevel("mineral-details");
+      navigateToMineral(data.mineralName);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -233,6 +304,7 @@ function App() {
       const data: MineralCharacteristic = await response.json();
       setSelectedMineral(data);
       setCurrentLevel("mineral-details");
+      navigateToMineral(data.mineralName);
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -419,10 +491,19 @@ function App() {
 
     if (selectedMineral) {
       setSelectedMineral(null);
-      setCurrentLevel("mineral");
       setSearchQuery("");
       setSearchResults(null);
       setMineralSearchResults(null);
+      navigate("/");
+
+      if (newPath.length === 0) {
+        setCurrentLevel("top-level");
+        void loadItems("top-level");
+      } else {
+        const previousStep = newPath[newPath.length - 1];
+        setCurrentLevel(previousStep.level);
+        void loadItems(previousStep.level, previousStep.name);
+      }
       return;
     }
 
@@ -437,8 +518,143 @@ function App() {
   };
 
   useEffect(() => {
+    if (mineralSlug || selectedMineral || navigationPath.length > 0) {
+      return;
+    }
+
     void loadItems("top-level");
-  }, []);
+  }, [mineralSlug, navigationPath.length, selectedMineral]);
+
+  useEffect(() => {
+    if (!mineralSlug) {
+      return;
+    }
+
+    if (
+      selectedMineral &&
+      mineralNameToSlug(selectedMineral.mineralName) === mineralSlug
+    ) {
+      return;
+    }
+
+    let isActive = true;
+
+    const resolveMineralFromSlug = async () => {
+      setLoading(true);
+      setError(null);
+
+      const query = slugToQuery(mineralSlug);
+      if (query.length < 3) {
+        if (!isActive) {
+          return;
+        }
+
+        setError("Некоректне посилання на мінерал");
+        setSelectedMineral(null);
+        return;
+      }
+
+      setSearchQuery("");
+      setSearchResults(null);
+      setMineralSearchResults(null);
+
+      try {
+        const findMatchedBySlug = (items: MineralSearchResultDto[]) =>
+          items.find(
+            (item) => mineralNameToSlug(item.mineralName) === mineralSlug,
+          );
+
+        let matched: MineralSearchResultDto | undefined;
+        const queryResponse = await fetch(
+          `${API_URL}/search/minerals?query=${encodeURIComponent(query)}&limit=500`,
+        );
+
+        if (queryResponse.ok) {
+          const candidates: MineralSearchResultDto[] =
+            await queryResponse.json();
+          matched = findMatchedBySlug(candidates);
+        }
+
+        if (!matched) {
+          const fallbackResponse = await fetch(
+            `${API_URL}/search/minerals?hasCharacteristics=true&limit=5000`,
+          );
+
+          if (!fallbackResponse.ok) {
+            const message = await getErrorText(
+              fallbackResponse,
+              "Помилка пошуку мінералу",
+            );
+            throw new Error(message);
+          }
+
+          const fallbackCandidates: MineralSearchResultDto[] =
+            await fallbackResponse.json();
+          matched = findMatchedBySlug(fallbackCandidates);
+        }
+
+        if (!isActive) {
+          return;
+        }
+
+        if (!matched) {
+          setError("Мінерал за цим посиланням не знайдено");
+          setSelectedMineral(null);
+          return;
+        }
+
+        const detailsResponse = await fetch(
+          `${API_URL}/minerals/characteristics?mineralId=${matched.mineralId}`,
+        );
+
+        if (!detailsResponse.ok) {
+          const message = await getErrorText(
+            detailsResponse,
+            "Не вдалося завантажити характеристики мінералу",
+          );
+          throw new Error(message);
+        }
+
+        const details: MineralCharacteristic = await detailsResponse.json();
+
+        if (!isActive) {
+          return;
+        }
+
+        setNavigationPath([
+          {
+            level: "mineral",
+            name: details.mineralName,
+            label: details.mineralName,
+          },
+        ]);
+        setSelectedMineral(details);
+        setCurrentLevel("mineral-details");
+        setError(null);
+      } catch (requestError) {
+        if (!isActive) {
+          return;
+        }
+
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Не вдалося відкрити сторінку мінералу",
+        );
+        setSelectedMineral(null);
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void resolveMineralFromSlug();
+
+    return () => {
+      isActive = false;
+    };
+  }, [mineralSlug]);
 
   const navigationEntries: BubbleGridEntry[] = items.map((item) => ({
     key: item,
@@ -525,7 +741,7 @@ function App() {
         )}
         {error && <p className="error message">{error}</p>}
 
-        {!loading && !error && items.length === 0 && (
+        {!loading && !error && !selectedMineral && items.length === 0 && (
           <p className="message">Поки що немає даних.</p>
         )}
 
