@@ -23,6 +23,7 @@ type BubbleButtonGridProps = {
     onClick: () => void;
     variant?: "back";
   };
+  forceMainSize?: number;
 };
 
 const getRowConfigForIndex = (
@@ -64,7 +65,10 @@ const getGridStartForItem = (
   return baseStart + centerShift + colIndex * 2;
 };
 
-const getBubbleMainSize = (viewportWidth: number, count: number): number => {
+export const getBubbleMainSize = (
+  viewportWidth: number,
+  count: number,
+): number => {
   const safeCount = Math.max(1, count);
 
   // Desktop: wide screens (>= 1400px)
@@ -105,6 +109,7 @@ export default function BubbleButtonGrid({
   entries,
   pattern = [3, 4],
   trailingAction,
+  forceMainSize,
 }: BubbleButtonGridProps) {
   const itemRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const previousRects = useRef<Map<string, DOMRect>>(new Map());
@@ -140,7 +145,8 @@ export default function BubbleButtonGrid({
   const bubbleColumns = Math.max(...pattern) * 2;
   const minPattern = Math.min(...pattern);
   const maxPattern = Math.max(...pattern);
-  const bubbleMainSize = getBubbleMainSize(viewportWidth, renderedItems.length);
+  const bubbleMainSize =
+    forceMainSize ?? getBubbleMainSize(viewportWidth, renderedItems.length);
 
   useLayoutEffect(() => {
     if (typeof window === "undefined") {

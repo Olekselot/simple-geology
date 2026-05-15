@@ -93,14 +93,14 @@
   border-radius: 999px;
   background: var(--bubble-color);
   color: var(--color-black);
-  font-size: 17px;
+  font-size: clamp(12px, calc(var(--bubble-main-size) * 0.13), 22px);
   font-weight: 700;
   line-height: 1.12;
   text-align: center;
   padding: 20px;
   cursor: pointer;
   transition: transform 0.44s ease, background-color 0.38s ease, box-shadow 0.38s ease;
-  box-shadow: 0 10px 26px rgba(0, 52, 0, 0.2);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-black) 24%, transparent);
   overflow: visible;
 }
 
@@ -128,7 +128,7 @@
 }
 
 .btn-bubble__badge {
-  font-size: 10px;
+  font-size: clamp(8px, calc(var(--bubble-main-size) * 0.07), 14px);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -140,7 +140,7 @@
 }
 
 .btn-bubble__meta {
-  font-size: 11px;
+  font-size: clamp(8px, calc(var(--bubble-main-size) * 0.09), 16px);
   line-height: 1.25;
   color: color-mix(in srgb, var(--color-black) 78%, var(--color-white));
   max-width: 100%;
@@ -153,7 +153,7 @@
   width: 0;
   height: 0;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
   opacity: 1;
   transition: opacity 0.56s ease;
 }
@@ -179,7 +179,7 @@
   height: var(--burst-dot-size);
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-secondary) 65%, var(--color-white));
-  box-shadow: 0 2px 8px rgba(0, 52, 0, 0.15);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-black) 20%, transparent);
   opacity: 0;
   transform: translate(-50%, -50%) translate(0, 0) scale(0.3);
   animation-name: center-burst-drift;
@@ -191,7 +191,7 @@
 .btn-bubble:hover {
   background: var(--bubble-color-hover);
   transform: scale(1.055);
-  box-shadow: 0 14px 34px rgba(0, 52, 0, 0.24);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--color-black) 28%, transparent);
 }
 
 .btn-bubble:focus-visible {

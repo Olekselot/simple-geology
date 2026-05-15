@@ -4,13 +4,13 @@
 
 :root {
   /* --- Core Palette --- */
-  --color-primary:    #e3d095; /* warm sand / gold */
-  --color-secondary:  #9ec590; /* soft sage green */
-  --color-accent:     #fda400; /* amber / orange */
-  --color-highlight:  #008001; /* deep forest green */
+  --color-primary:    #FEEA80; /* jasmine */
+  --color-secondary:  #CCFFFF; /* mint green */
+  --color-accent:     #FFCB80; /* sunset */
+  --color-highlight:  #38D1B4; /* turquoise */
 
-  --color-white: #fcfff1; /* warm off-white */
-  --color-black: #003400; /* very dark green-black */
+  --color-white: #F7FFFD; /* cool off-white */
+  --color-black: #1B3033; /* deep teal-black */
 
   /* --- Semantic aliases (use these in components) --- */
   --color-bg:            var(--color-white);

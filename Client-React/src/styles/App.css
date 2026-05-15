@@ -4,6 +4,8 @@
   padding: 24px;
   display: grid;
   gap: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .header {
@@ -107,7 +109,7 @@
 .category-button:hover {
   border-color: var(--color-highlight);
   background: var(--color-bg-muted);
-  box-shadow: 0 4px 12px rgba(0, 128, 1, 0.12);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-highlight) 24%, transparent);
   transform: translateY(-1px);
 }
 
@@ -144,11 +146,24 @@
   font-weight: 500;
 }
 
+.no-data-state {
+  display: grid;
+  gap: 8px;
+}
+
+.no-data-actions {
+  display: flex;
+  justify-content: center;
+}
+
 .mineral-details {
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 16px;
-  background: var(--color-bg-muted);
+  border: 1px solid color-mix(in srgb, var(--color-border) 78%, var(--color-white));
+  border-radius: 16px;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--color-secondary) 30%, transparent), transparent 48%),
+    linear-gradient(165deg, color-mix(in srgb, var(--color-bg-muted) 86%, var(--color-white)), color-mix(in srgb, var(--color-white) 92%, var(--color-secondary)));
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--color-black) 18%, transparent);
 }
 
 .mineral-details-shell {
@@ -156,11 +171,62 @@
   gap: 16px;
 }
 
+.leaflet-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-white) 88%, var(--color-secondary));
+  color: var(--color-black);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease,
+    background-color 0.24s ease;
+  white-space: nowrap;
+}
+
+.leaflet-back-button:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-highlight);
+  background: color-mix(in srgb, var(--color-white) 78%, var(--color-secondary));
+  box-shadow: 0 5px 12px color-mix(in srgb, var(--color-black) 18%, transparent);
+}
+
+.leaflet-back-button:active {
+  transform: translateY(0);
+}
+
+.leaflet-back-button__arrow {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--color-highlight);
+}
+
+.leaflet-back-button__label {
+  line-height: 1;
+}
+
 .mineral-details h3 {
   margin-top: 0;
-  margin-bottom: 14px;
+  margin-bottom: 0;
   color: var(--color-black);
   font-size: 22px;
+}
+
+.leaflet-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.leaflet-title {
+  margin: 0;
+  letter-spacing: 0.01em;
 }
 
 .detail-grid {
@@ -170,16 +236,25 @@
 }
 
 .detail-item {
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: var(--color-white);
-  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-border) 62%, var(--color-white));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-white) 90%, var(--color-secondary));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-black) 12%, transparent);
+  padding: 11px 12px;
   display: grid;
   gap: 6px;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+}
+
+.detail-item:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-highlight) 50%, var(--color-border));
+  box-shadow: 0 8px 16px color-mix(in srgb, var(--color-black) 14%, transparent);
 }
 
 .detail-item-wide {
   grid-column: 1 / -1;
+  background: color-mix(in srgb, var(--color-white) 84%, var(--color-primary));
 }
 
 .detail-label {
@@ -352,7 +427,7 @@
 }
 
 .error {
-  color: #7f1d1d;
+  color: var(--color-black);
   font-weight: 600;
   background: color-mix(in srgb, var(--color-accent) 20%, var(--color-white));
   border-radius: 8px;
@@ -384,6 +459,11 @@
 
   .detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .leaflet-title-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 
   .filters-grid {

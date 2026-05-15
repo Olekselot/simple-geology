@@ -16,4 +16,24 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(
+      120% 95% at 14% 100%,
+      color-mix(in srgb, var(--color-white) 42%, var(--color-secondary)) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      110% 90% at 100% 100%,
+      color-mix(in srgb, var(--color-white) 40%, var(--color-secondary)) 0%,
+      transparent 56%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-primary) 54%, var(--color-white)) 0%,
+      color-mix(in srgb, var(--color-primary) 40%, var(--color-white)) 46%,
+      color-mix(in srgb, var(--color-primary) 22%, var(--color-white)) 100%
+    );
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }

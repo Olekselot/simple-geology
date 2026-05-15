@@ -1,0 +1,50 @@
+.not-found-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.not-found-shell {
+  position: relative;
+  z-index: 1;
+  padding-top: 42px;
+}
+
+.not-found-code {
+  margin: 0 0 10px;
+  font-size: clamp(40px, 8vw, 64px);
+  line-height: 1;
+  font-weight: 900;
+  color: var(--color-accent);
+  text-shadow: 0 3px 10px color-mix(in srgb, var(--color-black) 24%, transparent);
+}
+
+.not-found-header {
+  padding: 30px;
+  border: 1px solid color-mix(in srgb, var(--color-white) 30%, transparent);
+  box-shadow: 0 14px 28px color-mix(in srgb, var(--color-black) 26%, transparent);
+}
+
+.not-found-header h1 {
+  margin: 0;
+}
+
+.not-found-header p {
+  margin: 8px 0 0;
+  color: color-mix(in srgb, var(--color-white) 86%, var(--color-primary));
+  opacity: 1;
+}
+
+.not-found-card {
+  display: grid;
+  gap: 18px;
+}
+
+.not-found-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.not-found-action {
+  min-height: 56px;
+}

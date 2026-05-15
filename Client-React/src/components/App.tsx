@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import "../styles/App.css";
 import BubbleAmbientAnimation from "./BubbleAmbientAnimation";
-import BubbleButtonGrid, { type BubbleGridEntry } from "./BubbleButtonGrid";
+import BubbleButtonGrid, {
+  type BubbleGridEntry,
+  getBubbleMainSize,
+} from "./BubbleButtonGrid";
 import SearchBar from "./SearchBar";
 import FilterPanel, {
   type MineralFilterState,
@@ -132,6 +135,15 @@ const mineralNameToSlug = (name: string) => {
 const slugToQuery = (slug: string) => slug.replace(/-/g, " ").trim();
 
 function App() {
+  // Для синхронізації розміру кульок у фільтрі та навігації
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const navigate = useNavigate();
   const { mineralSlug } = useParams<{ mineralSlug?: string }>();
   const [items, setItems] = useState<string[]>([]);
@@ -477,6 +489,9 @@ function App() {
   };
 
   const handleMineralFilterResultClick = (result: MineralSearchResultDto) => {
+    setMineralFilters(EMPTY_MINERAL_FILTERS);
+    setMineralSearchResults(null);
+    setSearchQuery("");
     setNavigationPath([
       { level: "mineral", name: result.mineralName, label: result.mineralName },
     ]);
@@ -549,8 +564,7 @@ function App() {
           return;
         }
 
-        setError("Некоректне посилання на мінерал");
-        setSelectedMineral(null);
+        navigate("/404", { replace: true });
         return;
       }
 
@@ -598,8 +612,7 @@ function App() {
         }
 
         if (!matched) {
-          setError("Мінерал за цим посиланням не знайдено");
-          setSelectedMineral(null);
+          navigate("/404", { replace: true });
           return;
         }
 
@@ -636,12 +649,13 @@ function App() {
           return;
         }
 
-        setError(
+        const message =
           requestError instanceof Error
             ? requestError.message
-            : "Не вдалося відкрити сторінку мінералу",
-        );
+            : "Не вдалося відкрити сторінку мінералу";
+        setError(message);
         setSelectedMineral(null);
+        navigate("/404", { replace: true });
       } finally {
         if (isActive) {
           setLoading(false);
@@ -654,7 +668,7 @@ function App() {
     return () => {
       isActive = false;
     };
-  }, [mineralSlug]);
+  }, [mineralSlug, navigate]);
 
   const navigationEntries: BubbleGridEntry[] = items.map((item) => ({
     key: item,
@@ -742,7 +756,21 @@ function App() {
         {error && <p className="error message">{error}</p>}
 
         {!loading && !error && !selectedMineral && items.length === 0 && (
-          <p className="message">Поки що немає даних.</p>
+          <section className="no-data-state">
+            <p className="message">Поки що немає даних.</p>
+            {backAction && (
+              <div className="no-data-actions">
+                <button
+                  type="button"
+                  className="leaflet-back-button"
+                  onClick={handleBack}
+                >
+                  <span className="leaflet-back-button__arrow">←</span>
+                  <span className="leaflet-back-button__label">Назад</span>
+                </button>
+              </div>
+            )}
+          </section>
         )}
 
         {showSearchLoadingMessage && (
@@ -774,6 +802,10 @@ function App() {
               <BubbleButtonGrid
                 entries={mineralFilterEntries}
                 trailingAction={backAction}
+                forceMainSize={getBubbleMainSize(
+                  viewportWidth,
+                  navigationEntries.length,
+                )}
               />
             )}
           </>
@@ -788,21 +820,25 @@ function App() {
             <BubbleButtonGrid
               entries={navigationEntries}
               trailingAction={backAction}
+              forceMainSize={undefined} // або зафіксований розмір, наприклад 120
             />
           )}
 
         {!loading && !error && selectedMineral && (
           <section className="mineral-details-shell">
-            <BubbleButtonGrid entries={[]} trailingAction={backAction} />
             <section className="mineral-details">
-              <h3>{selectedMineral.mineralName}</h3>
+              <div className="leaflet-title-row">
+                <h3 className="leaflet-title">{selectedMineral.mineralName}</h3>
+                <button
+                  type="button"
+                  className="leaflet-back-button"
+                  onClick={handleBack}
+                >
+                  <span className="leaflet-back-button__arrow">←</span>
+                  <span className="leaflet-back-button__label">Назад</span>
+                </button>
+              </div>
               <div className="detail-grid">
-                <div className="detail-item">
-                  <span className="detail-label">ID</span>
-                  <span className="detail-value">
-                    {selectedMineral.mineralId}
-                  </span>
-                </div>
                 <div className="detail-item">
                   <span className="detail-label">Хімічна формула</span>
                   <span className="detail-value">
