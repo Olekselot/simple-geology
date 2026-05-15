@@ -87,8 +87,10 @@
   --bubble-color-hover: color-mix(in srgb, var(--color-secondary) 72%, var(--color-white));
 
   position: relative;
-  width: var(--bubble-main-size);
-  height: var(--bubble-main-size);
+  width: min(var(--bubble-main-size), 100%);
+  height: auto;
+  aspect-ratio: 1;
+  flex-shrink: 0;
   border: none;
   border-radius: 999px;
   background: var(--bubble-color);
@@ -101,7 +103,7 @@
   cursor: pointer;
   transition: transform 0.44s ease, background-color 0.38s ease, box-shadow 0.38s ease;
   box-shadow: 0 10px 26px color-mix(in srgb, var(--color-black) 24%, transparent);
-  overflow: visible;
+  overflow: hidden;
 }
 
 .btn-bubble--back {

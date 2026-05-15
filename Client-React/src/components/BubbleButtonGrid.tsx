@@ -94,15 +94,15 @@ export const getBubbleMainSize = (
 
   // Small phones (< 768px)
   if (viewportWidth >= 560) {
-    const base = 90;
-    const densePenalty = Math.max(0, safeCount - 4) * 2;
-    return Math.max(70, base - densePenalty);
+    const base = 118;
+    const densePenalty = Math.max(0, safeCount - 3) * 4;
+    return Math.max(88, base - densePenalty);
   }
 
   // Extra small phones (< 560px)
-  const base = 72;
-  const densePenalty = Math.max(0, safeCount - 3) * 1;
-  return Math.max(56, base - densePenalty);
+  const base = 100;
+  const densePenalty = Math.max(0, safeCount - 3) * 3;
+  return Math.max(72, base - densePenalty);
 };
 
 export default function BubbleButtonGrid({
@@ -142,9 +142,12 @@ export default function BubbleButtonGrid({
       ]
     : entries;
 
-  const bubbleColumns = Math.max(...pattern) * 2;
-  const minPattern = Math.min(...pattern);
-  const maxPattern = Math.max(...pattern);
+  const effectivePattern: readonly [number, number] =
+    viewportWidth < 768 ? [2, 3] : pattern;
+
+  const bubbleColumns = Math.max(...effectivePattern) * 2;
+  const minPattern = Math.min(...effectivePattern);
+  const maxPattern = Math.max(...effectivePattern);
   const bubbleMainSize =
     forceMainSize ?? getBubbleMainSize(viewportWidth, renderedItems.length);
 
@@ -251,7 +254,7 @@ export default function BubbleButtonGrid({
     >
       {renderedItems.map((item, idx) => {
         const { rowIndex, colIndex, colsInThisRow, itemsInThisRow } =
-          getRowConfigForIndex(idx, renderedItems.length, pattern);
+          getRowConfigForIndex(idx, renderedItems.length, effectivePattern);
         const gridStart = getGridStartForItem(
           colIndex,
           colsInThisRow,
