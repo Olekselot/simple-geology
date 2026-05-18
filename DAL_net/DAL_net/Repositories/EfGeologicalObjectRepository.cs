@@ -373,24 +373,31 @@ public class EfGeologicalObjectRepository : IGeologicalObjectRepository
             query = query.Where(x => x.CommonUse != null && EF.Functions.ILike(x.CommonUse, pattern));
         }
 
+        const decimal hardnessTolerance = 0.5m;
+        const decimal specificGravityTolerance = 0.1m;
+
         if (filters.HardnessMin.HasValue)
         {
-            query = query.Where(x => x.Characteristic != null && x.Characteristic.HardnessMohs >= filters.HardnessMin.Value);
+            var min = filters.HardnessMin.Value - hardnessTolerance;
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.HardnessMohs >= min);
         }
 
         if (filters.HardnessMax.HasValue)
         {
-            query = query.Where(x => x.Characteristic != null && x.Characteristic.HardnessMohs <= filters.HardnessMax.Value);
+            var max = filters.HardnessMax.Value + hardnessTolerance;
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.HardnessMohs <= max);
         }
 
         if (filters.SpecificGravityMin.HasValue)
         {
-            query = query.Where(x => x.Characteristic != null && x.Characteristic.SpecificGravity >= filters.SpecificGravityMin.Value);
+            var min = filters.SpecificGravityMin.Value - specificGravityTolerance;
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.SpecificGravity >= min);
         }
 
         if (filters.SpecificGravityMax.HasValue)
         {
-            query = query.Where(x => x.Characteristic != null && x.Characteristic.SpecificGravity <= filters.SpecificGravityMax.Value);
+            var max = filters.SpecificGravityMax.Value + specificGravityTolerance;
+            query = query.Where(x => x.Characteristic != null && x.Characteristic.SpecificGravity <= max);
         }
 
         if (filters.Magnetism.HasValue)

@@ -1,20 +1,23 @@
 # Simple Geology
 
-Мінімальний навчальний проєкт для курсової з 3-шаровою архітектурою:
+Навчальний проєкт курсової роботи — інформаційна система класифікації та пошуку геологічних об'єктів (мінерали, гірські породи). Реалізує 3-шарову архітектуру з React-фронтендом і .NET 9 бекендом на PostgreSQL.
 
-- `Client-React` - UI на React + Vite
-- `API_net` - Web API (контролери, DTO, DI)
-- `BLL_net` - бізнес-логіка, моделі, інтерфейси сервісу та репозиторію
-- `DAL_net` - репозиторії + EF Core контекст і міграції PostgreSQL
-- `UnitTests` - xUnit тести для BLL
+## Структура рішення
+
+| Проєкт                    | Призначення                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| `Client-React`            | SPA-інтерфейс (React 19 + Vite + TypeScript)                      |
+| `API_net`                 | ASP.NET Core Web API — контролери, DTO, налаштування DI та CORS   |
+| `BLL_net`                 | Бізнес-логіка — моделі, інтерфейси сервісу та репозиторію         |
+| `DAL_net`                 | Доступ до даних — EF Core контекст, сутності, міграції PostgreSQL |
+| `UnitTests/BLL_net.Tests` | Модульні тести xUnit для BLL                                      |
 
 ## Зв'язки між шарами
 
-- API -> BLL (`IGeologicalObjectService`, `GeologicalObjectService`)
-- API -> DAL (`InMemoryGeologicalObjectRepository` через DI)
-- DAL -> BLL (`IGeologicalObjectRepository`, доменні моделі)
-- UnitTests -> BLL
-- Client-React -> API (`/api/geologicalobjects`)
+- API → BLL: `IGeologicalObjectService` / `GeologicalObjectService`
+- API → DAL: `EfGeologicalObjectRepository` через DI (реалізує `IGeologicalObjectRepository`)
+- DAL → BLL: залежить від абстракцій та доменних моделей BLL
+- Frontend → API: `http://localhost:5033/api/geologicalobjects`
 
 ## Налаштування секретів (User Secrets)
 
