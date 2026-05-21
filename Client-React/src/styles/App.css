@@ -1,13 +1,94 @@
 .page {
+  --filter-drawer-width: clamp(280px, 28vw, 380px);
+  --filter-drawer-gap: 16px;
   max-width: 1000px;
   margin: 0 auto;
+  left: 0;
   padding: 24px;
   display: grid;
   gap: 20px;
   position: relative;
   z-index: 1;
+  will-change: left, max-width;
+  transition:
+    max-width 0.46s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.46s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ── Home hero ──────────────────────────────────── */
+@keyframes hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-title-shine {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.home-hero {
+  padding: 28px 16px 20px;
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      ellipse 80% 120% at 50% -10%,
+      color-mix(in srgb, var(--color-secondary) 55%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--color-white) 72%, var(--color-primary)) 0%,
+      color-mix(in srgb, var(--color-white) 88%, var(--color-secondary)) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, var(--color-white));
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--color-black) 10%, transparent);
+  animation: hero-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.home-hero__title {
+  margin: 0;
+  font-size: clamp(30px, 6vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  padding-bottom: 0.15em;
+  line-height: 1.1;
+  background: linear-gradient(
+    115deg,
+    var(--color-black) 20%,
+    var(--color-highlight) 50%,
+    var(--color-black) 80%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation:
+    hero-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both,
+    hero-title-shine 4s linear 0.7s infinite;
+}
+
+.home-hero__subtitle {
+  margin: 0;
+  font-size: clamp(14px, 2vw, 18px);
+  color: var(--color-text-muted);
+  font-weight: 400;
+  animation: hero-fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+.home-hero + .search-box {
+  margin-top: 20px;
+}
+
+/* ── Legacy header (unused, kept for reference) ── */
 .header {
   background: linear-gradient(140deg, var(--color-black), var(--color-highlight));
   color: var(--color-white);
@@ -30,6 +111,8 @@
   border-radius: 16px;
   padding: 18px;
   box-shadow: none;
+  width: 100%;
+  min-width: 0;
 }
 
 .card h2 {
@@ -278,34 +361,31 @@
 }
 
 .filter-panel-dropdown {
-  overflow: hidden;
-  max-height: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--filter-drawer-width);
+  padding: 18px 14px;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-10px) scaleY(0.98);
-  transform-origin: top;
+  transform: translateX(calc(-100% - 24px));
   pointer-events: none;
-  margin-top: 0;
+  z-index: 30;
   transition:
-    max-height 0.48s ease,
     opacity 0.36s ease,
     transform 0.36s ease,
-    margin-top 0.36s ease,
-    visibility 0s linear 0.48s;
+    visibility 0s linear 0.36s;
 }
 
 .filter-panel-dropdown.open {
-  max-height: 1300px;
   opacity: 1;
   visibility: visible;
-  transform: translateY(0) scaleY(1);
+  transform: translateX(0);
   pointer-events: auto;
-  margin-top: 4px;
   transition:
-    max-height 0.56s ease,
     opacity 0.4s ease,
     transform 0.4s ease,
-    margin-top 0.4s ease,
     visibility 0s linear 0s;
 }
 
@@ -314,6 +394,61 @@
   .filter-panel-dropdown.open {
     transition: none;
     transform: none;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .page {
+    --filter-drawer-width: clamp(280px, 34vw, 336px);
+  }
+
+  .filter-panel-dropdown {
+    padding: 14px 10px;
+  }
+}
+
+@media (min-width: 769px) {
+  .page.filter-open {
+    left: calc((var(--filter-drawer-width) + var(--filter-drawer-gap)) / 2);
+    max-width: max(
+      520px,
+      calc(100vw - var(--filter-drawer-width) - (2 * var(--filter-drawer-gap)))
+    );
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-panel-dropdown {
+    position: static;
+    inset: auto;
+    width: auto;
+    padding: 0;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px) scaleY(0.98);
+    transform-origin: top;
+    pointer-events: none;
+    z-index: auto;
+    transition:
+      max-height 0.48s ease,
+      opacity 0.36s ease,
+      transform 0.36s ease,
+      visibility 0s linear 0.48s;
+  }
+
+  .filter-panel-dropdown.open {
+    max-height: 1300px;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scaleY(1);
+    pointer-events: auto;
+    transition:
+      max-height 0.56s ease,
+      opacity 0.4s ease,
+      transform 0.4s ease,
+      visibility 0s linear 0s;
   }
 }
 

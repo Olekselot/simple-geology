@@ -716,10 +716,26 @@ function App() {
     (mineralSearchResults !== null && mineralSearchResults.length > 0) ||
     backAction !== undefined;
 
+  const isFilterDrawerVisible = filterMode && !selectedMineral;
+
+  const isAtRoot =
+    navigationPath.length === 0 &&
+    !selectedMineral &&
+    searchQuery.length === 0 &&
+    !filterMode;
+
   return (
-    <main className="page">
+    <main className={`page${isFilterDrawerVisible ? " filter-open" : ""}`}>
       <BubbleAmbientAnimation visible={hasVisibleButtons} />
       <section className="card">
+        {isAtRoot && (
+          <div className="home-hero">
+            <h1 className="home-hero__title">Simple Geology</h1>
+            <p className="home-hero__subtitle">
+              Інтерактивний довідник мінералів та&nbsp;гірських порід
+            </p>
+          </div>
+        )}
         {!selectedMineral && (
           <div className="search-box">
             <SearchBar

@@ -2,21 +2,39 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 14px;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 18px 16px 24px;
   border: 2px solid var(--color-border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--color-white) 55%, transparent);
+  border-radius: 0 18px 18px 0;
+  background: color-mix(in srgb, var(--color-white) 82%, transparent);
+  box-shadow: 10px 0 28px color-mix(in srgb, var(--color-black) 18%, transparent);
   animation: filter-panel-in 0.32s ease;
+}
+
+.filter-panel::-webkit-scrollbar {
+  width: 0;
+  display: none;
+}
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .filter-panel {
+    padding: 16px 14px 20px;
+  }
 }
 
 @keyframes filter-panel-in {
   from {
     opacity: 0;
-    transform: translateY(-6px);
+    transform: translateX(-14px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(0);
   }
 }
 
@@ -122,6 +140,14 @@
 }
 
 @media (max-width: 620px) {
+  .filter-panel {
+    height: auto;
+    overflow-y: visible;
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: none;
+  }
+
   .filter-fields-grid {
     grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
   }
