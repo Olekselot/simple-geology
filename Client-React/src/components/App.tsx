@@ -61,6 +61,13 @@ interface MineralSearchResultDto {
   magnetism: boolean;
 }
 
+const translateError = (message: string): string => {
+  if (message.toLowerCase().includes("failed to fetch")) {
+    return "Не вдалося з'єднатися з сервером";
+  }
+  return message;
+};
+
 const getErrorText = async (response: Response, fallback: string) => {
   try {
     const payload = await response.json();
@@ -168,6 +175,7 @@ function App() {
   const [showLoadingMessage, setShowLoadingMessage] = useState(false);
   const [showSearchLoadingMessage, setShowSearchLoadingMessage] =
     useState(false);
+  const [heroExiting, setHeroExiting] = useState(false);
 
   const navigateToMineral = (mineralName: string) => {
     const slug = mineralNameToSlug(mineralName);
@@ -255,7 +263,7 @@ function App() {
     } catch (requestError) {
       setError(
         requestError instanceof Error
-          ? requestError.message
+          ? translateError(requestError.message)
           : "Невідома помилка",
       );
       setCurrentLevel(level);
@@ -288,7 +296,7 @@ function App() {
     } catch (requestError) {
       setError(
         requestError instanceof Error
-          ? requestError.message
+          ? translateError(requestError.message)
           : "Невідома помилка",
       );
     } finally {
@@ -320,7 +328,7 @@ function App() {
     } catch (requestError) {
       setError(
         requestError instanceof Error
-          ? requestError.message
+          ? translateError(requestError.message)
           : "Невідома помилка",
       );
     } finally {
@@ -651,7 +659,7 @@ function App() {
 
         const message =
           requestError instanceof Error
-            ? requestError.message
+            ? translateError(requestError.message)
             : "Не вдалося відкрити сторінку мінералу";
         setError(message);
         setSelectedMineral(null);
@@ -724,12 +732,28 @@ function App() {
     searchQuery.length === 0 &&
     !filterMode;
 
+  const heroVisible = isAtRoot || heroExiting;
+
+  useEffect(() => {
+    if (!isAtRoot && !heroExiting) {
+      return;
+    }
+    if (isAtRoot) {
+      setHeroExiting(false);
+      return;
+    }
+    // isAtRoot just became false — trigger exit animation
+    setHeroExiting(true);
+    const t = setTimeout(() => setHeroExiting(false), 380);
+    return () => clearTimeout(t);
+  }, [isAtRoot]);
+
   return (
     <main className={`page${isFilterDrawerVisible ? " filter-open" : ""}`}>
       <BubbleAmbientAnimation visible={hasVisibleButtons} />
       <section className="card">
-        {isAtRoot && (
-          <div className="home-hero">
+        {heroVisible && (
+          <div className={`home-hero${heroExiting ? " home-hero--exit" : ""}`}>
             <h1 className="home-hero__title">Simple Geology</h1>
             <p className="home-hero__subtitle">
               Інтерактивний довідник мінералів та&nbsp;гірських порід
