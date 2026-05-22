@@ -1,0 +1,51 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: GeologyDB
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - geology_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d GeologyDB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── ASP.NET Core API ────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    ports:
+      - "5033:5033"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=GeologyDB;Username=postgres;Password=${DB_PASSWORD}"
+      AppSecrets__JwtSecretKey: ${JWT_SECRET}
+      AdminCredentials__Login: ${ADMIN_LOGIN}
+      AdminCredentials__Password: ${ADMIN_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── React client (nginx) ────────────────────────────────────────────────────
+  client:
+    build:
+      context: ./Client-React
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  geology_data:

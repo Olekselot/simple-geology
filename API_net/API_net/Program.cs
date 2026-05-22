@@ -85,6 +85,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Auto-apply EF Core migrations on startup (required for Docker)
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GeologyDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
 
 app.UseSwagger();

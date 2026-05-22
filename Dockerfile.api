@@ -1,0 +1,29 @@
+# ── Build stage ──────────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copy only csproj files first – better layer cache for package restore
+COPY BLL_net/BLL_net/BLL_net.csproj   BLL_net/BLL_net/
+COPY DAL_net/DAL_net/DAL_net.csproj   DAL_net/DAL_net/
+COPY API_net/API_net/API_net.csproj   API_net/API_net/
+RUN dotnet restore API_net/API_net/API_net.csproj
+
+# Copy all source code
+COPY BLL_net/BLL_net/ BLL_net/BLL_net/
+COPY DAL_net/DAL_net/ DAL_net/DAL_net/
+COPY API_net/API_net/ API_net/API_net/
+
+RUN dotnet publish API_net/API_net/API_net.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
+
+# ── Runtime stage ─────────────────────────────────────────────────────────────
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+
+EXPOSE 5033
+ENV ASPNETCORE_URLS=http://+:5033
+
+ENTRYPOINT ["dotnet", "API_net.dll"]

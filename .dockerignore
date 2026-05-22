@@ -1,0 +1,15 @@
+# Exclude build artefacts from the Docker build context (API build)
+**/bin/
+**/obj/
+**/.git/
+**/.vs/
+
+# Exclude the frontend – it has its own build context
+Client-React/
+
+# Exclude test projects
+UnitTests/
+
+# Exclude solution/IDE files
+*.sln
+*.user
