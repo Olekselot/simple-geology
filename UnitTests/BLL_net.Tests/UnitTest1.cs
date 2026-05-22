@@ -321,5 +321,11 @@ public class GeologicalObjectServiceTests
             onSearchMinerals?.Invoke(filters);
             return Task.FromResult<IReadOnlyList<MineralSearchResult>>([]);
         }
+
+        public Task<(byte[] Data, string ContentType)?> GetMineralImageAsync(int mineralId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<(byte[] Data, string ContentType)?>(null);
+
+        public Task UploadMineralImageAsync(int mineralId, byte[] data, string contentType, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
     }
 }

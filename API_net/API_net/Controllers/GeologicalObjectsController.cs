@@ -179,6 +179,54 @@ public class GeologicalObjectsController : ControllerBase
         }
     }
 
+    [HttpGet("minerals/{id:int}/image")]
+    public async Task<IActionResult> GetMineralImage(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _service.GetMineralImageAsync(id, cancellationToken);
+            if (result is null)
+                return NotFound(new { error = "Image not found" });
+
+            return File(result.Value.Data, result.Value.ContentType);
+        }
+        catch (Exception ex)
+        {
+            return Error<object>(ex.Message);
+        }
+    }
+
+    [HttpPost("minerals/{id:int}/image")]
+    public async Task<IActionResult> UploadMineralImage(
+        int id,
+        IFormFile image,
+        CancellationToken cancellationToken)
+    {
+        if (image is null || image.Length == 0)
+            return BadRequest(new { error = "No image provided" });
+
+        using var ms = new MemoryStream();
+        await image.CopyToAsync(ms, cancellationToken);
+
+        try
+        {
+            await _service.UploadMineralImageAsync(id, ms.ToArray(), image.ContentType, cancellationToken);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            return Error<object>(ex.Message);
+        }
+    }
+
     [HttpGet("minerals/characteristics")]
     public async Task<ActionResult<MineralCharacteristicDto>> GetMineralCharacteristics(
         [FromQuery] int? mineralId,
@@ -273,7 +321,8 @@ public class GeologicalObjectsController : ControllerBase
             item.Morphology,
             item.Paragenesis,
             item.SpecialProperties,
-            item.Notes);
+            item.Notes,
+            item.HasImage);
     }
 
     private static string GetEntityTypeLabel(string entityType) => entityType switch

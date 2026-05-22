@@ -217,8 +217,40 @@ public class EfGeologicalObjectRepository : IGeologicalObjectRepository
             Morphology = characteristic?.Morphology,
             Paragenesis = characteristic?.Paragenesis,
             SpecialProperties = characteristic?.SpecialProperties,
-            Notes = characteristic?.Notes
+            Notes = characteristic?.Notes,
+            HasImage = characteristic?.ImageData != null
         };
+    }
+
+    public async Task<(byte[] Data, string ContentType)?> GetMineralImageAsync(
+        int mineralId,
+        CancellationToken cancellationToken = default)
+    {
+        var row = await _dbContext.MineralCharacteristics
+            .AsNoTracking()
+            .Where(x => x.MineralId == mineralId && x.ImageData != null)
+            .Select(x => new { x.ImageData, x.ImageContentType })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (row?.ImageData is null)
+            return null;
+
+        return (row.ImageData, row.ImageContentType ?? "image/png");
+    }
+
+    public async Task UploadMineralImageAsync(
+        int mineralId,
+        byte[] data,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = await _dbContext.MineralCharacteristics
+            .FirstOrDefaultAsync(x => x.MineralId == mineralId, cancellationToken)
+            ?? throw new KeyNotFoundException($"No characteristics row found for mineral {mineralId}");
+
+        entity.ImageData = data;
+        entity.ImageContentType = contentType;
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<SearchResult>> SearchAsync(

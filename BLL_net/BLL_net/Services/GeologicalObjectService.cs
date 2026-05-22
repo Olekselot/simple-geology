@@ -135,4 +135,28 @@ public class GeologicalObjectService : IGeologicalObjectService
 
         return _repository.SearchMineralsAsync(normalizedFilters, cancellationToken);
     }
+
+    public Task<(byte[] Data, string ContentType)?> GetMineralImageAsync(
+        int mineralId,
+        CancellationToken cancellationToken = default)
+    {
+        return _repository.GetMineralImageAsync(mineralId, cancellationToken);
+    }
+
+    public async Task UploadMineralImageAsync(
+        int mineralId,
+        byte[] data,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        const int maxBytes = 10 * 1024 * 1024; // 10 MB
+        if (data.Length > maxBytes)
+            throw new ArgumentException("Image exceeds the 10 MB size limit");
+
+        var allowed = new[] { "image/png", "image/jpeg", "image/webp" };
+        if (!allowed.Contains(contentType.ToLowerInvariant()))
+            throw new ArgumentException("Only PNG, JPEG, and WebP images are supported");
+
+        await _repository.UploadMineralImageAsync(mineralId, data, contentType, cancellationToken);
+    }
 }

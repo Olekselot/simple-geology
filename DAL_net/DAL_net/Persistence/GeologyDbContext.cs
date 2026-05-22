@@ -150,6 +150,8 @@ public class GeologyDbContext : DbContext
             entity.Property(x => x.Paragenesis).HasColumnName("paragenesis");
             entity.Property(x => x.SpecialProperties).HasColumnName("special_properties");
             entity.Property(x => x.Notes).HasColumnName("notes");
+            entity.Property(x => x.ImageData).HasColumnName("image_data");
+            entity.Property(x => x.ImageContentType).HasColumnName("image_content_type").HasMaxLength(100);
 
             entity.HasIndex(x => x.MineralId).HasDatabaseName("idx_mineral_char_mineral");
             entity.HasIndex(x => x.MineralId).IsUnique();

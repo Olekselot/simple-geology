@@ -101,6 +101,15 @@ namespace DAL_net.Persistence.Migrations
                         .HasColumnType("character varying(80)")
                         .HasColumnName("transparency");
 
+                    b.Property<byte[]>("ImageData")
+                        .HasColumnType("bytea")
+                        .HasColumnName("image_data");
+
+                    b.Property<string>("ImageContentType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("image_content_type");
+
                     b.HasKey("Id");
 
                     b.HasIndex("MineralId")

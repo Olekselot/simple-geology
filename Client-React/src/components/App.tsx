@@ -40,6 +40,7 @@ interface MineralCharacteristic {
   paragenesis: string | null;
   specialProperties: string | null;
   notes: string | null;
+  hasImage: boolean;
 }
 
 interface SearchResultDto {
@@ -877,6 +878,18 @@ function App() {
                   <span className="leaflet-back-button__arrow">←</span>
                   <span className="leaflet-back-button__label">Назад</span>
                 </button>
+              </div>
+
+              <div className="mineral-image-section">
+                {selectedMineral.hasImage ? (
+                  <img
+                    className="mineral-image"
+                    src={`${API_URL}/minerals/${selectedMineral.mineralId}/image`}
+                    alt={selectedMineral.mineralName}
+                  />
+                ) : (
+                  <div className="mineral-image-placeholder">Фото відсутнє</div>
+                )}
               </div>
               <div className="detail-grid">
                 <div className="detail-item">

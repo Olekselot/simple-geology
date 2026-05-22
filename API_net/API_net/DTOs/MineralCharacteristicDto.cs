@@ -17,4 +17,5 @@ public record MineralCharacteristicDto(
     string? Morphology,
     string? Paragenesis,
     string? SpecialProperties,
-    string? Notes);
+    string? Notes,
+    bool HasImage);

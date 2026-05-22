@@ -35,4 +35,6 @@ public class MineralCharacteristic
     public string? SpecialProperties { get; set; }
 
     public string? Notes { get; set; }
+
+    public bool HasImage { get; set; }
 }

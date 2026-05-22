@@ -31,4 +31,14 @@ public interface IGeologicalObjectRepository
     Task<IReadOnlyList<MineralSearchResult>> SearchMineralsAsync(
         MineralSearchFilters filters,
         CancellationToken cancellationToken = default);
+
+    Task<(byte[] Data, string ContentType)?> GetMineralImageAsync(
+        int mineralId,
+        CancellationToken cancellationToken = default);
+
+    Task UploadMineralImageAsync(
+        int mineralId,
+        byte[] data,
+        string contentType,
+        CancellationToken cancellationToken = default);
 }
