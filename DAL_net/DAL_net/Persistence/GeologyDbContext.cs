@@ -26,6 +26,12 @@ public class GeologyDbContext : DbContext
 
     public DbSet<RockMineralCompositionEntity> RockMineralCompositions => Set<RockMineralCompositionEntity>();
 
+    public DbSet<TopLevelCategoryEntity> TopLevelCategories => Set<TopLevelCategoryEntity>();
+
+    public DbSet<SiteTextEntity> SiteTexts => Set<SiteTextEntity>();
+
+    public DbSet<AuditLogEntity> AuditLogs => Set<AuditLogEntity>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -187,6 +193,40 @@ public class GeologyDbContext : DbContext
                 .WithMany(x => x.RockCompositions)
                 .HasForeignKey(x => x.MineralId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TopLevelCategoryEntity>(entity =>
+        {
+            entity.ToTable("top_level_categories");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasColumnName("id");
+            entity.Property(x => x.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
+            entity.Property(x => x.SourceTable).HasColumnName("source_table").HasMaxLength(200).IsRequired();
+            entity.Property(x => x.HasItems).HasColumnName("has_items").HasDefaultValue(false);
+            entity.HasIndex(x => x.Name).IsUnique();
+        });
+
+        modelBuilder.Entity<SiteTextEntity>(entity =>
+        {
+            entity.ToTable("site_texts");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasColumnName("id");
+            entity.Property(x => x.Key).HasColumnName("key").HasMaxLength(200).IsRequired();
+            entity.Property(x => x.Value).HasColumnName("value").IsRequired();
+            entity.Property(x => x.Description).HasColumnName("description").HasMaxLength(500);
+            entity.HasIndex(x => x.Key).IsUnique();
+        });
+
+        modelBuilder.Entity<AuditLogEntity>(entity =>
+        {
+            entity.ToTable("audit_log");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).HasColumnName("id");
+            entity.Property(x => x.TableName).HasColumnName("table_name").HasMaxLength(100).IsRequired();
+            entity.Property(x => x.RecordId).HasColumnName("record_id");
+            entity.Property(x => x.Operation).HasColumnName("operation").HasMaxLength(50).IsRequired();
+            entity.Property(x => x.ChangedAt).HasColumnName("changed_at");
+            entity.Property(x => x.Description).HasColumnName("description");
         });
     }
 }

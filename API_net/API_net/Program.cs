@@ -1,8 +1,11 @@
+using System.Text;
 using DAL_net.Persistence;
 using DAL_net.Repositories;
 using BLL_net.Abstractions;
 using BLL_net.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +26,16 @@ if (string.IsNullOrWhiteSpace(jwtSecret))
         "In development, run: dotnet user-secrets set \"AppSecrets:JwtSecretKey\" \"<your-secret-key>\"");
 }
 
+var adminLogin = builder.Configuration["AdminCredentials:Login"];
+var adminPassword = builder.Configuration["AdminCredentials:Password"];
+if (string.IsNullOrWhiteSpace(adminLogin) || string.IsNullOrWhiteSpace(adminPassword))
+{
+    throw new InvalidOperationException(
+        "Missing required secrets: AdminCredentials:Login and AdminCredentials:Password. " +
+        "In development, run: dotnet user-secrets set \"AdminCredentials:Login\" \"admin\" && " +
+        "dotnet user-secrets set \"AdminCredentials:Password\" \"1111\"");
+}
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -32,6 +45,24 @@ builder.Services.AddDbContext<GeologyDbContext>(options =>
     options.UseNpgsql(connectionString));
 builder.Services.AddScoped<IGeologicalObjectRepository, EfGeologicalObjectRepository>();
 builder.Services.AddScoped<IGeologicalObjectService, GeologicalObjectService>();
+builder.Services.AddScoped<IAdminRepository, EfAdminRepository>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = "simple-geology",
+            ValidAudience = "simple-geology-admin",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+    });
+
 builder.Services.AddCors(options =>
 {
 	options.AddPolicy("ClientReact", policy =>
@@ -66,6 +97,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors("ClientReact");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

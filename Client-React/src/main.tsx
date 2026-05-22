@@ -6,11 +6,15 @@ import "./styles/buttons.css";
 import "./styles/index.css";
 import App from "./components/App";
 import NotFoundPage from "./components/NotFoundPage.tsx";
+import AdminLogin from "./components/AdminLogin";
+import AdminPanel from "./components/AdminPanel";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
+        <Route path="/admin_edit" element={<AdminLogin />} />
+        <Route path="/admin_edit/panel" element={<AdminPanel />} />
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="/" element={<App />} />
         <Route path="/:mineralSlug" element={<App />} />
