@@ -180,7 +180,7 @@
   width: var(--burst-dot-size);
   height: var(--burst-dot-size);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-secondary) 65%, var(--color-white));
+  background: color-mix(in srgb, var(--color-secondary) 85%, var(--color-white));
   box-shadow: 0 2px 8px color-mix(in srgb, var(--color-black) 20%, transparent);
   opacity: 0;
   transform: translate(-50%, -50%) translate(0, 0) scale(0.3);
@@ -208,7 +208,7 @@
   }
 
   20% {
-    opacity: 0.48;
+    opacity: 0.78;
   }
 
   100% {

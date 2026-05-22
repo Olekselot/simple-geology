@@ -881,6 +881,7 @@ function App() {
               </div>
 
               <div className="mineral-image-section">
+                <BubbleAmbientAnimation visible />
                 {selectedMineral.hasImage ? (
                   <img
                     className="mineral-image"
