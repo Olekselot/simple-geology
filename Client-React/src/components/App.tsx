@@ -80,9 +80,7 @@ const getErrorText = async (response: Response, fallback: string) => {
     if (typeof payload?.title === "string") {
       return payload.title;
     }
-  } catch {
-    // Ignore invalid JSON body and use fallback message.
-  }
+  } catch {}
 
   return fallback;
 };
@@ -121,16 +119,13 @@ const CYRILLIC_TO_LATIN: Record<string, string> = {
   ь: "",
   ю: "yu",
   я: "ya",
-  э: "e",
-  ё: "yo",
-  ъ: "",
 };
 
 const mineralNameToSlug = (name: string) => {
   const transliterated = name
     .trim()
     .toLowerCase()
-    .replace(/[а-яіїєґёэъь]/g, (char) => CYRILLIC_TO_LATIN[char] ?? "")
+    .replace(/[а-яіїєґь]/g, (char) => CYRILLIC_TO_LATIN[char] ?? "")
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "");
 
@@ -143,7 +138,6 @@ const mineralNameToSlug = (name: string) => {
 const slugToQuery = (slug: string) => slug.replace(/-/g, " ").trim();
 
 function App() {
-  // Для синхронізації розміру кульок у фільтрі та навігації
   const [viewportWidth, setViewportWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
@@ -190,7 +184,6 @@ function App() {
     }
   };
 
-  // Delay showing loading message by 0.5 second
   useEffect(() => {
     if (loading) {
       const timer = setTimeout(() => setShowLoadingMessage(true), 500);
@@ -200,7 +193,6 @@ function App() {
     }
   }, [loading]);
 
-  // Delay showing search loading message by 0.5 second
   useEffect(() => {
     if (searchLoading) {
       const timer = setTimeout(() => setShowSearchLoadingMessage(true), 500);
@@ -221,8 +213,6 @@ function App() {
     try {
       let endpoint: string;
 
-      // If no selectedName is provided and level is "top-level", get top-level categories.
-      // Otherwise, drill down to the children level.
       if (level === "top-level" && !selectedName) {
         endpoint = `${API_URL}/classes/top-level`;
       } else {
@@ -241,7 +231,6 @@ function App() {
       const data: string[] = await response.json();
       setItems(data);
 
-      // Determine the next level to use when items are clicked
       let nextLevel = level;
       if (level === "top-level") {
         if (selectedName === "Гірські породи") {
@@ -474,8 +463,6 @@ function App() {
       return;
     }
 
-    // The actual next level will be determined by the backend
-    // We keep currentLevel and send it with selectedName
     void loadItems(currentLevel, itemName);
   };
 
@@ -743,7 +730,6 @@ function App() {
       setHeroExiting(false);
       return;
     }
-    // isAtRoot just became false — trigger exit animation
     setHeroExiting(true);
     const t = setTimeout(() => setHeroExiting(false), 380);
     return () => clearTimeout(t);
@@ -861,7 +847,7 @@ function App() {
             <BubbleButtonGrid
               entries={navigationEntries}
               trailingAction={backAction}
-              forceMainSize={undefined} // або зафіксований розмір, наприклад 120
+              forceMainSize={undefined}
             />
           )}
 

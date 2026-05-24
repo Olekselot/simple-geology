@@ -13,7 +13,6 @@ public class AdminService : IAdminService
     }
 
     // --- Hierarchy ---
-
     public Task<IReadOnlyList<AdminTopLevelCategoryModel>> GetTopLevelCategoriesAsync(CancellationToken ct = default)
         => _repo.GetTopLevelCategoriesAsync(ct);
 
@@ -125,7 +124,6 @@ public class AdminService : IAdminService
     }
 
     // --- Leaves ---
-
     public Task<IReadOnlyList<AdminMineralModel>> GetMineralsAsync(CancellationToken ct = default)
         => _repo.GetMineralsAsync(ct);
 
@@ -171,7 +169,6 @@ public class AdminService : IAdminService
     }
 
     // --- Characteristics ---
-
     public Task<IReadOnlyList<AdminMineralCharacteristicModel>> GetMineralCharacteristicsAsync(CancellationToken ct = default)
         => _repo.GetMineralCharacteristicsAsync(ct);
 
@@ -217,7 +214,6 @@ public class AdminService : IAdminService
     }
 
     // --- Site Texts ---
-
     public Task<IReadOnlyList<AdminSiteTextModel>> GetSiteTextsAsync(CancellationToken ct = default)
         => _repo.GetSiteTextsAsync(ct);
 
@@ -228,7 +224,6 @@ public class AdminService : IAdminService
     }
 
     // --- History ---
-
     public Task<IReadOnlyList<AdminAuditLogModel>> GetAuditLogsAsync(int limit = 200, CancellationToken ct = default)
         => _repo.GetAuditLogsAsync(limit, ct);
 }

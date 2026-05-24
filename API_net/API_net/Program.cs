@@ -9,7 +9,6 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Validate required secrets are present before starting
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -35,8 +34,6 @@ if (string.IsNullOrWhiteSpace(adminLogin) || string.IsNullOrWhiteSpace(adminPass
         "In development, run: dotnet user-secrets set \"AdminCredentials:Login\" \"admin\" && " +
         "dotnet user-secrets set \"AdminCredentials:Password\" \"1111\"");
 }
-
-// Add services to the container.
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -91,8 +88,6 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<GeologyDbContext>();
     db.Database.Migrate();
 }
-
-// Configure the HTTP request pipeline.
 
 app.UseSwagger();
 app.UseSwaggerUI();
